@@ -19,6 +19,8 @@ namespace SeedeXR.Kionjo.EditorTools
         {
             public int ExitCode;
             public string StdErrTail = "";
+            /// <summary>All of stderr; filled by Run only (the async runner streams it to its log instead).</summary>
+            public string StdErr = "";
             public string StdOut = "";
             public bool Cancelled;
             public bool TimedOut;
@@ -60,9 +62,15 @@ namespace SeedeXR.Kionjo.EditorTools
         {
             var stdout = new StringBuilder();
             var stderr = new Queue<string>();
+            var allErr = new StringBuilder();
             using var p = new Process { StartInfo = StartInfo(cmd, progress: false) };
             p.OutputDataReceived += (_, e) => { if (e.Data != null) lock (stdout) stdout.AppendLine(e.Data); };
-            p.ErrorDataReceived += (_, e) => { if (e.Data != null) Enqueue(stderr, e.Data); };
+            p.ErrorDataReceived += (_, e) =>
+            {
+                if (e.Data == null) return;
+                Enqueue(stderr, e.Data);
+                lock (allErr) allErr.AppendLine(e.Data);
+            };
             p.Start();
             p.BeginOutputReadLine();
             p.BeginErrorReadLine();
@@ -74,6 +82,7 @@ namespace SeedeXR.Kionjo.EditorTools
                 ExitCode = exited ? p.ExitCode : -1,
                 StdOut = stdout.ToString(),
                 StdErrTail = Tail(stderr),
+                StdErr = allErr.ToString(),
                 TimedOut = !exited,
             };
         }
