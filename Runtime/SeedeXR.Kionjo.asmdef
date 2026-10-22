@@ -1,0 +1,14 @@
+{
+    "name": "SeedeXR.Kionjo",
+    "rootNamespace": "SeedeXR.Kionjo",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

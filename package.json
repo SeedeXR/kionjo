@@ -1,0 +1,21 @@
+{
+  "name": "com.seedexr.kionjo",
+  "version": "0.1.0",
+  "displayName": "Kionjo",
+  "description": "Trailer tool for Unity: storyboard, record a performance in the headset or with any camera, replay it frame locked, render offline, auto cut with ffmpeg.",
+  "unity": "6000.0",
+  "documentationUrl": "https://github.com/SeedeXR/kionjo",
+  "author": {
+    "name": "SeedeXR",
+    "url": "https://github.com/SeedeXR"
+  },
+  "license": "MIT",
+  "keywords": [
+    "trailer",
+    "vr",
+    "capture",
+    "recorder",
+    "ffmpeg",
+    "storyboard"
+  ]
+}

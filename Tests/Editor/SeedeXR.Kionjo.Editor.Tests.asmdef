@@ -1,0 +1,25 @@
+{
+    "name": "SeedeXR.Kionjo.Editor.Tests",
+    "rootNamespace": "SeedeXR.Kionjo.Tests",
+    "references": [
+        "SeedeXR.Kionjo",
+        "SeedeXR.Kionjo.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
