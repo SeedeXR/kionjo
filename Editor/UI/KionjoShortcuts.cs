@@ -26,7 +26,7 @@ namespace SeedeXR.Kionjo.EditorTools
             w.rootVisualElement.Q<ShootTab>()?.Controller?.ToggleRecord();
         }
 
-        [Shortcut("Kionjo/Done", typeof(KionjoWindow), KeyCode.Return)]
+        [Shortcut("Kionjo/Done", typeof(KionjoWindow), KeyCode.N)]
         static void Done(ShortcutArguments a)
         {
             var w = Window(a);

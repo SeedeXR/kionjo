@@ -118,6 +118,7 @@
     border-radius: 3px;
     background-color: rgba(0, 0, 0, 0.35);
     margin-right: 8px;
+    overflow: hidden;
 }
 
 .kionjo-card__thumb-label {
@@ -128,7 +129,9 @@
     bottom: 0;
     -unity-text-align: middle-center;
     color: #9a9a9a;
-    font-size: 10px;
+    font-size: 9px;
+    white-space: normal;
+    padding: 2px 4px;
 }
 
 .kionjo-card__main {

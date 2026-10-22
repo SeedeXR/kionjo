@@ -435,7 +435,7 @@ namespace SeedeXR.Kionjo.EditorTools
             var head = new Label("Storyboard");
             head.AddToClassList("kionjo-section");
             box.Add(head);
-            foreach (var p in new[] { "title", "outputFolder", "targetSeconds", "renderPreset", "cutPreset", "subtitles", "music", "musicCrossfadeSeconds", "ducking", "loudness" })
+            foreach (var p in new[] { "title", "outputFolder", "targetSeconds", "renderPreset", "cutPreset", "subtitles", "music", "musicCrossfadeSeconds", "ducking", "loudness", "renderQuality" })
                 box.Add(new UnityEditor.UIElements.PropertyField(_so.FindProperty(p)));
             box.Bind(_so);
             box.TrackSerializedObjectValue(_so, _ => _timeline.Refresh(storyboard, selected));
@@ -482,6 +482,7 @@ namespace SeedeXR.Kionjo.EditorTools
             Show(_jobCancel, running);
             if (!running) _cutTab?.Refresh();
             _shootTab?.RefreshIfIdle();
+            if (storyboard != null) KionjoStateFile.Write(storyboard, SelectedShot?.id, force: !running);
         }
     }
 }

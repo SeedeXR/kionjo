@@ -21,6 +21,7 @@ namespace SeedeXR.Kionjo.EditorTools
             public float Duration;
             public int Events;
             public bool IsSelected;
+            public bool IsRecording;
         }
 
         public KionjoStoryboard Storyboard { get; }
@@ -70,6 +71,8 @@ namespace SeedeXR.Kionjo.EditorTools
             var folder = KionjoPaths.ShotTakes(Storyboard, Current);
             if (!Directory.Exists(folder)) return;
             var selected = KionjoPaths.SelectedTakeFolder(Storyboard, Current);
+            var rec = Recorder;
+            var recording = rec != null && rec.IsRecording ? rec.CurrentTakeFolder : null;
             foreach (var dir in Directory.GetDirectories(folder))
             {
                 var name = Path.GetFileName(dir);
@@ -89,6 +92,7 @@ namespace SeedeXR.Kionjo.EditorTools
                     Duration = meta?.durationSeconds ?? 0f,
                     Events = meta?.events.Count ?? 0,
                     IsSelected = selected != null && Path.GetFullPath(selected) == Path.GetFullPath(dir),
+                    IsRecording = recording != null && Path.GetFullPath(recording) == Path.GetFullPath(dir),
                 });
             }
             Takes.Sort((a, b) => a.Number.CompareTo(b.Number));

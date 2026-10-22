@@ -87,7 +87,7 @@ namespace SeedeXR.Kionjo.EditorTools
 
             var doneRow = new VisualElement();
             doneRow.AddToClassList("kionjo-row");
-            _done = new Button(PressDone) { name = "shoot-done", text = "Done, next shot (Enter)", tooltip = "This shot is done: move to the next shot that is not a card." };
+            _done = new Button(PressDone) { name = "shoot-done", text = "Done, next shot (N)", tooltip = "This shot is done: move to the next shot that is not a card." };
             doneRow.Add(_done);
             _lastShot = new Label { name = "shoot-last-shot" };
             _lastShot.style.marginLeft = 8;
@@ -228,9 +228,9 @@ namespace SeedeXR.Kionjo.EditorTools
             if (_controller == null || i >= _controller.Takes.Count) return;
             var t = _controller.Takes[i];
             var name = row.Q<Label>("take-name");
-            name.text = t.IsSelected ? $"{t.Name}  (used)" : t.Name;
+            name.text = t.IsSelected && !t.IsRecording ? $"{t.Name}  (used)" : t.Name;
             name.EnableInClassList("kionjo-take__selected", t.IsSelected);
-            row.Q<Label>("take-info").text = $"{t.Duration:0.0} s, {t.Events} event{(t.Events == 1 ? "" : "s")}";
+            row.Q<Label>("take-info").text = t.IsRecording ? "recording" : $"{t.Duration:0.0} s, {t.Events} event{(t.Events == 1 ? "" : "s")}";
             Rebind(row.Q<Button>("take-select"), () => _controller.SelectTake(t));
             var replay = row.Q<Button>("take-replay");
             Rebind(replay, () => _controller.Replay(t));

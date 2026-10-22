@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -79,7 +80,16 @@ namespace SeedeXR.Kionjo.EditorTools
             {
                 Section("Source");
                 Field("outputMode");
-                if (_target.outputMode == KionjoOutputMode.DeviceCapture) Field("deviceCapturePath");
+                if (_target.outputMode == KionjoOutputMode.DeviceCapture)
+                {
+                    Field("deviceCapturePath");
+                    Add(new Button(ImportCapture)
+                    {
+                        name = "import-capture",
+                        text = "Import capture",
+                        tooltip = "Copy a headset or device video into this shot's captures folder and use it. Set In Point and Out Point to trim it.",
+                    });
+                }
                 if (_target.type == KionjoShotType.Performance && _target.outputMode == KionjoOutputMode.OfflineRender) Field("selectedTake");
 
                 Section("Timing");
@@ -110,6 +120,11 @@ namespace SeedeXR.Kionjo.EditorTools
             Section("Notes");
             Field("notes");
 
+            if (_target.IsCard)
+            {
+                UpdateButtons();
+                return; // cards are drawn by the cut: no camera picture, no render
+            }
             Section("Picture");
             _preview = new Image { scaleMode = ScaleMode.ScaleToFit, image = KionjoThumbnails.Get(_target.thumbnailPath) };
             _preview.AddToClassList("kionjo-thumb-preview");
@@ -190,6 +205,16 @@ namespace SeedeXR.Kionjo.EditorTools
             _so.ApplyModifiedProperties();
             _preview.image = KionjoThumbnails.Get(path);
             _message.text = $"Thumbnail saved from {cam.name}.";
+        }
+
+        void ImportCapture()
+        {
+            var picked = EditorUtility.OpenFilePanel("Import capture", "", "mp4,mov,mkv");
+            if (string.IsNullOrEmpty(picked)) return;
+            var target = CaptureImporter.Import(_window.Storyboard, _target, picked);
+            CaptureImporter.WriteIndex(_window.Storyboard, new FfprobeMediaProbe());
+            _window.Rebuild();
+            Debug.Log($"Kionjo: imported {Path.GetFileName(picked)} as {target}");
         }
 
         void Render()

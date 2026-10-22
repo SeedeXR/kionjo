@@ -19,7 +19,7 @@ namespace SeedeXR.Kionjo.EditorTools
         readonly Button _renderMissing, _animatic, _build, _openMp4, _openFolder;
         readonly ListView _warnings;
         readonly TextField _log;
-        readonly List<string> _warningItems = new();
+        readonly List<string> _warningItems = new() { "Build a draft or an animatic: shots left out and dropped cues are listed here." };
         CutJob _last;
         bool _revealed;
 
@@ -137,6 +137,11 @@ namespace SeedeXR.Kionjo.EditorTools
                 }
             }
         }
+
+        public CutJob LastJob => _last;
+        public void BuildDraft() => Build(animatic: false);
+        public void BuildAnimatic() => Build(animatic: true);
+        public void RenderMissingShots() => RenderMissing();
 
         void Build(bool animatic)
         {
