@@ -18,6 +18,8 @@ namespace SeedeXR.Kionjo.EditorTools
 
         public string OutputMp4 { get; private set; }
         public string OutputSrt { get; private set; }
+        /// <summary>FCP7 XML timeline beside the MP4, for Premiere Pro or DaVinci Resolve.</summary>
+        public string OutputXml { get; private set; }
         public string Folder => _folder;
 
         public CutJob(CutPlan plan, string cutFolder, string ffmpegExe, string title = null)
@@ -72,6 +74,8 @@ namespace SeedeXR.Kionjo.EditorTools
             }
             OutputMp4 = Path.Combine(_folder, OutputName);
             OutputSrt = _plan.Subtitles.Count > 0 ? Path.Combine(_folder, CutCommandBuilder.Subs) : null;
+            OutputXml = Path.ChangeExtension(OutputMp4, ".xml");
+            File.WriteAllText(OutputXml, Fcp7XmlWriter.Write(_plan, Path.GetFileNameWithoutExtension(OutputName), _folder), new UTF8Encoding(false));
             Progress = 1f;
             Status = $"Done: {OutputName}";
             AddLog(Status);
