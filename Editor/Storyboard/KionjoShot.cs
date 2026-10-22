@@ -72,12 +72,12 @@ namespace SeedeXR.Kionjo.EditorTools
         public List<KionjoSfxCue> sfx = new();
         [TextArea(2, 6)] public string notes;
         [Tooltip("Device capture mode: the headset video file for this shot.")]
-        public string deviceCapturePath;
+        [KionjoPath("mp4,mov,mkv")] public string deviceCapturePath;
         public KionjoCardKind cardKind;
         [Tooltip("Text card lines, shown one after another.")]
         public List<string> cardLines = new();
         [Tooltip("Image card: the picture to show (for example the store cover).")]
-        public string cardImagePath;
+        [KionjoPath("png,jpg,jpeg")] public string cardImagePath;
         [Tooltip("Image card: slow push in, end scale. 1 = none.")]
         public float cardPushIn = 1.04f;
         [Tooltip("Thumbnail PNG shown on the card and in the animatic.")]
@@ -93,7 +93,7 @@ namespace SeedeXR.Kionjo.EditorTools
     public class KionjoVoiceLine
     {
         [Tooltip("Audio file of the line.")]
-        public string audioPath;
+        [KionjoPath("wav,mp3,ogg,m4a,flac")] public string audioPath;
         [Tooltip("Subtitle text. Empty = no subtitle.")]
         public string subtitle;
         [Tooltip("Seconds after the shot starts in the cut.")]
@@ -114,7 +114,7 @@ namespace SeedeXR.Kionjo.EditorTools
     [Serializable]
     public class KionjoSfxCue
     {
-        public string audioPath;
+        [KionjoPath("wav,mp3,ogg,m4a,flac")] public string audioPath;
         [Tooltip("Seconds after the shot starts in the cut. Used when Event Name is empty.")]
         public float at;
         [Tooltip("Plays at the moment this recorded event happened in the take (for example a button press).")]
@@ -125,7 +125,7 @@ namespace SeedeXR.Kionjo.EditorTools
     [Serializable]
     public class KionjoMusicCue
     {
-        public string audioPath;
+        [KionjoPath("mp3,wav,ogg,m4a,flac")] public string audioPath;
         public float trimIn;
         [Tooltip("0 = the end of the file.")]
         public float trimOut;
@@ -158,11 +158,11 @@ namespace SeedeXR.Kionjo.EditorTools
     public class KionjoSubtitleStyle
     {
         [Tooltip("Font file for subtitles. Empty uses Arial.")]
-        public string fontPath;
+        [KionjoPath("ttf,otf")] public string fontPath;
         [Tooltip("Font family name inside that file.")]
         public string fontName = "Arial";
         [Tooltip("Font file for text cards. Empty uses a sans serif default.")]
-        public string titleFontPath;
+        [KionjoPath("ttf,otf")] public string titleFontPath;
         public int size = 15;
         [Tooltip("ASS colour, &HAABBGGRR.")]
         public string colour = "&H00EDEDED";

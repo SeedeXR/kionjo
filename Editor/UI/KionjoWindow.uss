@@ -1,0 +1,413 @@
+/* Kionjo window. Unity's theme variables do most of the work; the few Kionjo colours are
+   declared for both skins (the window adds kionjo-light or kionjo-dark to its root). */
+
+.kionjo-light {
+    --kionjo-record: #c62f27;
+    --kionjo-ready: #2e8b3c;
+    --kionjo-warn: #b0700a;
+    --kionjo-muted: #6b6b6b;
+    --kionjo-tag: rgba(0, 0, 0, 0.08);
+    --kionjo-card: rgba(255, 255, 255, 0.55);
+    --kionjo-card-selected: rgba(58, 121, 187, 0.25);
+    --kionjo-segment: #8f8f8f;
+    --kionjo-segment-card: #b9b9b9;
+}
+
+.kionjo-dark {
+    --kionjo-record: #e5534b;
+    --kionjo-ready: #57b366;
+    --kionjo-warn: #e0a030;
+    --kionjo-muted: #9a9a9a;
+    --kionjo-tag: rgba(255, 255, 255, 0.08);
+    --kionjo-card: rgba(255, 255, 255, 0.04);
+    --kionjo-card-selected: rgba(58, 121, 187, 0.35);
+    --kionjo-segment: #6a6a6a;
+    --kionjo-segment-card: #4a4a4a;
+}
+
+.kionjo-root {
+    flex-grow: 1;
+    background-color: var(--unity-colors-window-background);
+}
+
+.kionjo-body {
+    flex-grow: 1;
+}
+
+.kionjo-tab-body {
+    flex-grow: 1;
+}
+
+.kionjo-hidden {
+    display: none;
+}
+
+/* Empty state */
+.kionjo-empty {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.kionjo-empty__icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 12px;
+    opacity: 0.8;
+}
+
+.kionjo-empty__title {
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+
+.kionjo-empty__text {
+    color: var(--kionjo-muted);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    max-width: 420px;
+    margin-bottom: 12px;
+}
+
+.kionjo-empty__drop {
+    border-width: 1px;
+    border-color: var(--unity-colors-default-border);
+    border-radius: 4px;
+    padding: 10px 18px;
+    margin-top: 8px;
+    color: var(--kionjo-muted);
+}
+
+.kionjo-empty__drop--hover {
+    border-color: var(--unity-colors-highlight-background);
+}
+
+/* Shot list */
+.kionjo-list-pane {
+    min-width: 260px;
+}
+
+.kionjo-list-footer {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 4px;
+    border-top-width: 1px;
+    border-color: var(--unity-colors-default-border);
+}
+
+.kionjo-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 6px;
+    margin: 2px 4px;
+    border-radius: 4px;
+    background-color: var(--kionjo-card);
+    height: 60px;
+}
+
+.unity-collection-view__item--selected .kionjo-card {
+    background-color: var(--kionjo-card-selected);
+}
+
+.kionjo-card__thumb {
+    width: 88px;
+    height: 50px;
+    min-width: 88px;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.35);
+    margin-right: 8px;
+}
+
+.kionjo-card__thumb-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    -unity-text-align: middle-center;
+    color: #9a9a9a;
+    font-size: 10px;
+}
+
+.kionjo-card__main {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+}
+
+.kionjo-card__title {
+    flex-direction: row;
+    overflow: hidden;
+}
+
+.kionjo-card__code {
+    -unity-font-style: bold;
+    margin-right: 6px;
+}
+
+.kionjo-card__name {
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kionjo-card__tags {
+    flex-direction: row;
+    margin-top: 3px;
+}
+
+.kionjo-tag {
+    font-size: 10px;
+    padding: 1px 5px;
+    margin-right: 4px;
+    border-radius: 3px;
+    background-color: var(--kionjo-tag);
+    color: var(--kionjo-muted);
+}
+
+.kionjo-card__side {
+    align-items: flex-end;
+    margin-left: 6px;
+}
+
+.kionjo-card__length {
+    -unity-font-style: bold;
+}
+
+.kionjo-card__state {
+    font-size: 10px;
+    color: var(--kionjo-muted);
+}
+
+.kionjo-card__state--ready {
+    color: var(--kionjo-ready);
+}
+
+/* Inspector */
+.kionjo-inspector {
+    padding: 6px 8px 12px 8px;
+}
+
+.kionjo-section {
+    -unity-font-style: bold;
+    margin-top: 10px;
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+    border-bottom-width: 1px;
+    border-color: var(--unity-colors-default-border);
+}
+
+.kionjo-drop {
+    border-width: 1px;
+    border-color: var(--unity-colors-default-border);
+    border-radius: 3px;
+    padding: 6px;
+    margin: 4px 0;
+    color: var(--kionjo-muted);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.kionjo-drop--hover {
+    border-color: var(--unity-colors-highlight-background);
+}
+
+.kionjo-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.kionjo-thumb-preview {
+    width: 192px;
+    height: 108px;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.35);
+    margin: 4px 0;
+}
+
+/* Timeline */
+.kionjo-timeline {
+    flex-direction: row;
+    align-items: center;
+    height: 30px;
+    padding: 4px 6px;
+    border-top-width: 1px;
+    border-color: var(--unity-colors-default-border);
+}
+
+.kionjo-timeline__bar {
+    flex-direction: row;
+    flex-grow: 1;
+    height: 18px;
+}
+
+.kionjo-timeline__segment {
+    min-width: 3px;
+    margin-right: 1px;
+    background-color: var(--kionjo-segment);
+    border-radius: 2px;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.kionjo-timeline__segment--card {
+    background-color: var(--kionjo-segment-card);
+}
+
+.kionjo-timeline__segment--selected {
+    border-width: 1px;
+    border-color: var(--unity-colors-highlight-background);
+}
+
+.kionjo-timeline__label {
+    font-size: 9px;
+    -unity-text-align: middle-center;
+    color: #f0f0f0;
+}
+
+.kionjo-timeline__total {
+    margin-left: 8px;
+    min-width: 120px;
+    -unity-text-align: middle-right;
+}
+
+.kionjo-timeline__total--over {
+    color: var(--kionjo-warn);
+}
+
+/* Shoot */
+.kionjo-shoot {
+    padding: 8px 10px;
+}
+
+.kionjo-shoot__header {
+    font-size: 15px;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+
+.kionjo-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    -unity-font-style: bold;
+    color: #ffffff;
+    align-self: flex-start;
+    margin: 4px 0;
+}
+
+.kionjo-badge--ready {
+    background-color: var(--kionjo-ready);
+}
+
+.kionjo-badge--not-ready {
+    background-color: var(--kionjo-warn);
+}
+
+.kionjo-verify-line {
+    white-space: normal;
+    margin-left: 4px;
+}
+
+.kionjo-verify-line--error {
+    color: var(--kionjo-record);
+}
+
+.kionjo-verify-line--warning {
+    color: var(--kionjo-warn);
+}
+
+.kionjo-verify-line--info {
+    color: var(--kionjo-muted);
+}
+
+.kionjo-record {
+    height: 40px;
+    font-size: 15px;
+    -unity-font-style: bold;
+    margin: 8px 0 4px 0;
+}
+
+.kionjo-record--recording {
+    background-color: var(--kionjo-record);
+    color: #ffffff;
+}
+
+.kionjo-elapsed {
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.kionjo-take {
+    flex-direction: row;
+    align-items: center;
+    height: 26px;
+    padding: 0 4px;
+}
+
+.kionjo-take__name {
+    width: 120px;
+}
+
+.kionjo-take__selected {
+    -unity-font-style: bold;
+}
+
+.kionjo-take__info {
+    flex-grow: 1;
+    color: var(--kionjo-muted);
+}
+
+/* Cut */
+.kionjo-cut {
+    padding: 8px 10px;
+}
+
+.kionjo-ok {
+    color: var(--kionjo-ready);
+}
+
+.kionjo-bad {
+    color: var(--kionjo-record);
+}
+
+.kionjo-log {
+    flex-grow: 1;
+    min-height: 120px;
+    margin-top: 6px;
+}
+
+.kionjo-log .unity-text-field__input {
+    font-size: 11px;
+}
+
+/* Status bar */
+.kionjo-status {
+    flex-direction: row;
+    align-items: center;
+    height: 22px;
+    padding: 0 6px;
+    border-top-width: 1px;
+    border-color: var(--unity-colors-default-border);
+}
+
+.kionjo-status__ffmpeg {
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--kionjo-muted);
+    font-size: 11px;
+}
+
+.kionjo-status__job {
+    flex-grow: 1;
+    -unity-text-align: middle-right;
+    font-size: 11px;
+    margin-right: 6px;
+}
+
+.kionjo-status__progress {
+    width: 140px;
+}
