@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <!-- Kionjo: a film frame that is also a headset visor. Source of truth for the PNGs
+       (Tools~/make_icons.py draws the same shapes). The frame is the outer rounded rectangle
+       minus the inner one, with the stroke bending up around a nose arch on the lower edge. -->
+  <defs>
+    <mask id="visor" maskUnits="userSpaceOnUse" x="0" y="0" width="16" height="16">
+      <rect x="0" y="0" width="16" height="16" fill="#fff"/>
+      <rect x="3" y="5" width="10" height="6" rx="1" fill="#000"/>
+      <ellipse cx="8" cy="12.5" rx="3" ry="3.2" fill="#fff"/>
+      <ellipse cx="8" cy="12.5" rx="1.5" ry="1.7" fill="#000"/>
+    </mask>
+  </defs>
+  <g fill="#555555">
+    <rect x="1.5" y="3.5" width="13" height="9" rx="2.5" mask="url(#visor)"/>
+    <circle cx="5.4" cy="7.6" r="1.7"/>
+    <circle cx="10.6" cy="7.6" r="1.7"/>
+  </g>
+</svg>
