@@ -78,6 +78,7 @@ namespace SeedeXR.Kionjo.EditorTools
             Status = $"Rendering {_shot.code} at {_preset}";
             AddLog(Status);
 
+            QualityOverride.Apply(_sb.renderQuality);
             var host = KionjoRenderHost.Create(request);
             try
             {
@@ -103,6 +104,7 @@ namespace SeedeXR.Kionjo.EditorTools
             }
             finally
             {
+                QualityOverride.Restore();
                 if (host != null) Object.Destroy(host.gameObject);
             }
 
