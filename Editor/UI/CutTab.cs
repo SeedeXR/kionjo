@@ -148,7 +148,7 @@ namespace SeedeXR.Kionjo.EditorTools
             var sb = _window.Storyboard;
             var ffmpeg = FfmpegLocator.FindFfmpeg();
             if (sb == null || ffmpeg == null) return;
-            var plan = CutPlanBuilder.Build(sb, sb.cutPreset, new FfprobeMediaProbe(), animatic, SilenceDetect.Resolver(ffmpeg));
+            var plan = CutPlanBuilder.Build(sb, sb.cutPreset, new FfprobeMediaProbe(), animatic, WordTimer.Resolver(ffmpeg));
             _warningItems.Clear();
             _warningItems.AddRange(plan.Warnings);
             _warningItems.AddRange(plan.Notes);
