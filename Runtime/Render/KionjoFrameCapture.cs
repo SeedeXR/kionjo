@@ -56,7 +56,15 @@ namespace SeedeXR.Kionjo
             camera.enabled = false;
             FramesCaptured = 0;
             Error = null;
-            sink.Begin(width, height, fps, FlipVertically);
+            try
+            {
+                sink.Begin(width, height, fps, FlipVertically);
+            }
+            catch
+            {
+                Restore();
+                throw;
+            }
             IsCapturing = true;
         }
 

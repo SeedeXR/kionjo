@@ -103,6 +103,7 @@ namespace SeedeXR.Kionjo.Tests
             var count = FrameCaptureTests.RunTool(FrameCaptureTests.FindExe("ffprobe"),
                 $"-v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of csv=p=0 \"{output}\"", out _).Trim();
             Assert.AreEqual("30", count);
+            Assert.IsFalse(File.Exists(Path.ChangeExtension(output, ".partial.mp4")), "the render is moved into place when it succeeds");
             Assert.AreEqual(0f, Time.captureDeltaTime, "the clock lock must be released after a render");
         }
     }

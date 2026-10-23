@@ -18,7 +18,7 @@ namespace SeedeXR.Kionjo
     /// </summary>
     public sealed class FfmpegPipeSink : IKionjoFrameSink
     {
-        readonly string _ffmpeg, _output;
+        readonly string _ffmpeg, _output, _final;
         readonly string[] _encoderArgs;
         readonly int _queueFrames;
         Process _process;
@@ -30,10 +30,15 @@ namespace SeedeXR.Kionjo
         public string Error => _error;
         public int ExitCode { get; private set; } = -1;
 
+        /// <summary>
+        /// Frames are encoded into outputMp4 with ".partial.mp4" and moved over outputMp4 only when
+        /// ffmpeg finished cleanly, so a cancelled or failed re-render never destroys the last good file.
+        /// </summary>
         public FfmpegPipeSink(string ffmpegExe, string outputMp4, string[] encoderArgs, int queueFrames = 3)
         {
             _ffmpeg = ffmpegExe;
-            _output = outputMp4;
+            _final = outputMp4;
+            _output = Path.ChangeExtension(outputMp4, ".partial.mp4");
             _encoderArgs = encoderArgs ?? new[] { "-c:v", "libx264", "-crf", "18", "-preset", "medium" };
             _queueFrames = Math.Max(1, queueFrames);
         }
@@ -86,6 +91,14 @@ namespace SeedeXR.Kionjo
                 catch (IOException e)
                 {
                     _error = $"ffmpeg stopped reading frames: {e.Message}\n{Tail()}";
+                    // keep draining so a producer blocked on a full queue is released
+                    try
+                    {
+                        foreach (var _ in _queue.GetConsumingEnumerable()) { }
+                    }
+                    catch (InvalidOperationException)
+                    {
+                    }
                 }
             }) { IsBackground = true, Name = "Kionjo ffmpeg writer" };
             _writer.Start();
@@ -94,14 +107,17 @@ namespace SeedeXR.Kionjo
         public void Push(NativeArray<byte> rgba)
         {
             if (_queue == null || _queue.IsAddingCompleted || _error != null) return;
-            _queue.Add(rgba.ToArray());
+            var frame = rgba.ToArray();
+            // Bounded wait: when ffmpeg dies the error is set and the frame dropped, the editor never hangs.
+            while (!_queue.TryAdd(frame, 200))
+                if (_error != null || _queue.IsAddingCompleted) return;
         }
 
         public void End()
         {
             if (_queue == null) return;
             _queue.CompleteAdding();
-            _writer.Join();
+            if (!_writer.Join(30000)) _error ??= "ffmpeg stopped taking frames.";
             try
             {
                 _process.StandardInput.Close();
@@ -121,6 +137,12 @@ namespace SeedeXR.Kionjo
                 ExitCode = _process.ExitCode;
                 if (ExitCode != 0) _error ??= $"ffmpeg exited with {ExitCode}:\n{Tail()}";
             }
+            if (_error == null && File.Exists(_output))
+            {
+                if (File.Exists(_final)) File.Delete(_final);
+                File.Move(_output, _final);
+            }
+            else TryDelete(_output);
             _queue = null;
             _process.Dispose();
             _process = null;
@@ -131,9 +153,25 @@ namespace SeedeXR.Kionjo
             if (_queue != null && !_queue.IsAddingCompleted) _queue.CompleteAdding();
             Kill();
             _writer?.Join(2000);
+            _process?.WaitForExit(2000);
             _process?.Dispose();
             _process = null;
             _queue = null;
+            TryDelete(_output); // an aborted render leaves nothing behind; the previous good file is untouched
+        }
+
+        static void TryDelete(string path)
+        {
+            try
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
         }
 
         void Kill()
