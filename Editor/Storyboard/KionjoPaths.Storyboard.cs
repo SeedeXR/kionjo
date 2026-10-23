@@ -34,7 +34,7 @@ namespace SeedeXR.Kionjo.EditorTools
         {
             var take = SelectedTakeFolder(sb, shot);
             var name = take != null ? Path.GetFileName(take) : null;
-            if (shot.type == KionjoShotType.LiveCamera || shot.type == KionjoShotType.Still) name = shot.code;
+            if (shot.type == KionjoShotType.LiveCamera || shot.type == KionjoShotType.Still) name = KionjoTakePaths.Sanitize(shot.code);
             if (name == null) return null;
             foreach (var preset in new[] { KionjoRenderPreset.UHD2160p60, KionjoRenderPreset.HD1080p60, KionjoRenderPreset.Preview720p30 })
             {

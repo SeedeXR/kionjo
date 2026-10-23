@@ -471,6 +471,26 @@ while `Library/PackageCache` resolves 17.0.4; CLAUDE.md says 17.0.4.
 | 19 | Default render range | Whole take for Preview; selected range plus 1 s handles for HD and UHD | Previews are for choosing; masters are expensive at 4K | Always whole take |
 | 20 | Executor method | `superpowers:executing-plans`, native, one agent | No human for review gates overnight; the plan carries the design | Subagent-driven (needs a reviewer loop) |
 
+## 12b. Changes made while building (executor, 2026-10-23)
+
+| Area | Plan said | Built | Why |
+|---|---|---|---|
+| Render trigger | RenderJob enters Play mode itself, resumes after the reload | Render only in Play mode (the button says "Enter Play mode to render") | Entering Play mode reloads the domain and drops the running job; shooting already happens in Play mode. Auto enter is a follow up |
+| Render range | Selected range plus 1 s handles for HD and UHD | Whole take always | Handles would shift every cut in point; needs the sidecar's start offset in the cut plan first |
+| Frame capture | WaitForEndOfFrame, then AsyncGPUReadback | Explicit render in LateUpdate 32001 (URP `SubmitRenderRequest` StandardRequest, else `Camera.Render`), camera's own render paused | WaitForEndOfFrame never fires in batchmode; this also renders each frame once |
+| Render output | Straight to the final file | `<name>.partial.mp4`, moved over the final file only on success | A cancelled re-render no longer destroys the last good render (review finding) |
+| Process arguments | `ProcessStartInfo.ArgumentList` | One command line built by `FfmpegCommand.Quote` (Windows C runtime rules) | ArgumentList support in Unity's Mono is uncertain |
+| Text cards | Text escaped inside drawtext | Each line in `seg/<label>_lineN.txt`, `textfile=` with `expansion=none` | No escaping of quotes, colons or percent signs at all |
+| Fonts | `font=Sans` when no font is set | A font file is always copied into the cut folder (storyboard font, else Arial or DejaVu Sans) | `font=Sans` goes through fontconfig, which crashes ffmpeg on Windows |
+| Music fade out | `st = total - fadeOut` (as trailer 1) | From where the joined music really ends | In trailer 1 the fade started before the 7.5 s delay and was never heard |
+| Fades of 0 | `afade d=0`, `acrossfade d=0` | Left out; cues joined with `concat` when the crossfade is 0 | ffmpeg reads d=0 as its 0.9 s default (verified) |
+| Segments | Duration by `-t` | Exactly round(D x fps) frames, `tpad` holds the last frame | Picture can no longer drift from voice, music and subtitles |
+| Words trim | Word bounds | Word bounds inside a line; -55 dB silence edges at the line's own ends | Whisper ends words early (whyhere-01: 3.5 s against a real 4.0 s) |
+| Done shortcut | Enter | N | Unity rejects Return as a shortcut key |
+| Agent attribute | `[CliCommand(name, description)]` (pipeline 0.8) | `[CliCommand("kionjo", name, description)]`, asmdef gated on pipeline 0.9.0-exp.1 | The installed pipeline is 0.9; the group form is `unity command kionjo status` |
+| State file | Agent assembly | Editor assembly (written by the window) | Useful to any script, with or without the pipeline package |
+| Project Settings > Kionjo | ScriptableSingleton with default output folder and presets | Not built | The storyboard already holds both; Preferences > Kionjo covers ffmpeg, encoder, Python |
+
 ## 13. Risks
 
 1. **Window smoke test under batchmode.** UI Toolkit windows usually build their tree without a

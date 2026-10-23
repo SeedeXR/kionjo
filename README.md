@@ -87,7 +87,7 @@ With `com.unity.pipeline` installed, every verb is a CLI command:
 
 ## Status
 
-v0.1, in development. Tested headless (EditMode and PlayMode, 130 tests) and live in the editor;
+v0.1, in development. Tested headless (EditMode and PlayMode, 139 tests) and live in the editor;
 the headset pass is [Documentation~/HeadsetPass.md](Documentation~/HeadsetPass.md).
 
 ## License

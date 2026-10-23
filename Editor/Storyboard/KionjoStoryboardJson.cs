@@ -26,7 +26,8 @@ namespace SeedeXR.Kionjo.EditorTools
                 EditorJsonUtility.FromJsonOverwrite(json, incoming);
                 Undo.RecordObject(sb, "Import storyboard");
                 foreach (var s in incoming.shots)
-                    if (string.IsNullOrEmpty(s.id)) s.id = Guid.NewGuid().ToString("N");
+                    if (string.IsNullOrEmpty(s.id) || (!replace && sb.shots.Exists(e => e.id == s.id)))
+                        s.id = Guid.NewGuid().ToString("N"); // appended copies get their own thumbnails and takes
                 if (replace)
                 {
                     var keepOutput = sb.outputFolder;
