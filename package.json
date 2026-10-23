@@ -17,5 +17,12 @@
     "recorder",
     "ffmpeg",
     "storyboard"
+  ],
+  "samples": [
+    {
+      "displayName": "Quick Start",
+      "description": "A small scene with a stand in head and hands rig and an example storyboard: record, render and cut a draft without a headset.",
+      "path": "Samples~/QuickStart"
+    }
   ]
 }
