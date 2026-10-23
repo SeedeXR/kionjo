@@ -9,6 +9,7 @@
     --kionjo-tag: rgba(0, 0, 0, 0.08);
     --kionjo-card: rgba(255, 255, 255, 0.55);
     --kionjo-card-selected: rgba(58, 121, 187, 0.25);
+    --kionjo-accent: #3a79bb;
     --kionjo-segment: #8f8f8f;
     --kionjo-segment-card: #b9b9b9;
 }
@@ -21,6 +22,7 @@
     --kionjo-tag: rgba(255, 255, 255, 0.08);
     --kionjo-card: rgba(255, 255, 255, 0.04);
     --kionjo-card-selected: rgba(58, 121, 187, 0.35);
+    --kionjo-accent: #5a9ae0;
     --kionjo-segment: #6a6a6a;
     --kionjo-segment-card: #4a4a4a;
 }
@@ -413,4 +415,68 @@
 
 .kionjo-status__progress {
     width: 140px;
+}
+
+/* Section headings with a "?" to the docs */
+.kionjo-section--help {
+    flex-direction: row;
+    align-items: center;
+}
+
+.kionjo-section--help > Label {
+    flex-grow: 1;
+}
+
+.kionjo-help-button {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    border-radius: 8px;
+    font-size: 10px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: var(--kionjo-muted);
+}
+
+/* Guided tour */
+.kionjo-tour {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    justify-content: flex-end;
+    align-items: flex-end;
+    padding: 0 8px 30px 0;
+}
+
+.kionjo-tour__card {
+    width: 300px;
+    max-width: 70%;
+    padding: 10px 12px;
+    border-width: 1px;
+    border-radius: 6px;
+    border-color: var(--kionjo-accent);
+    background-color: var(--unity-colors-window-background);
+}
+
+.kionjo-tour__count {
+    font-size: 10px;
+    color: var(--kionjo-muted);
+}
+
+.kionjo-tour__title {
+    -unity-font-style: bold;
+    font-size: 13px;
+    margin: 2px 0 4px 0;
+}
+
+.kionjo-tour__text {
+    white-space: normal;
+}
+
+.kionjo-tour-target {
+    border-width: 2px;
+    border-color: var(--kionjo-accent);
 }

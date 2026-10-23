@@ -8,7 +8,9 @@ using UnityEngine;
 /// </summary>
 public class KionjoSampleRigMover : MonoBehaviour
 {
+    [Tooltip("Stand in head and hands, moved on simple loops.")]
     public Transform head, leftHand, rightHand;
+    [Tooltip("Turn off when you record with a real rig.")]
     public bool move = true;
     float _nextBeep = 2f;
 

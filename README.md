@@ -5,8 +5,11 @@ your experience. Plan the shots on a storyboard, perform each shot in the headse
 camera), replay the performance frame locked and render it offline at up to 4K, then let ffmpeg
 cut a draft with voice, subtitles, music and sound effects.
 
-Built by [SeedeXR](https://github.com/SeedeXR) after cutting the trailer of the VR courtroom drama
+Built by [SeedeXR](https://seedexr.com/) after cutting the trailer of the VR courtroom drama
 Baraza by hand. Made for VR developers first, useful for any Unity project.
+
+**Documentation: [seedexr.github.io/kionjo-docs](https://seedexr.github.io/kionjo-docs/)**, with a
+step by step guide and an "I want to..." page that starts from what you are trying to make.
 
 ## Why
 
@@ -22,6 +25,8 @@ Unity Package Manager > Add package from git URL:
 https://github.com/SeedeXR/kionjo.git
 ```
 
+To stay on a release, add its tag: `https://github.com/SeedeXR/kionjo.git#v0.1.0`.
+
 Requirements:
 
 - Unity 6000.0 or newer (tested on 6000.0.70f1, URP).
@@ -35,13 +40,15 @@ No dependency on Meta XR, OpenXR, XRI, Cinemachine, Timeline or the Recorder pac
 ## Quick start
 
 Import the **Quick Start** sample (Package Manager > Kionjo > Samples) and run Tools > Kionjo >
-Build Quick Start Scene to try everything without a headset. With your own project:
+Build Quick Start Scene to try everything without a headset. The first time the window opens, a
+short guided tour walks through it (Help > Guided tour brings it back). With your own project:
 
 1. **Record transforms.** Add Component > SeedeXR > **Kionjo Recorder** to your rig. Add a track
    for the head camera (name it `Head`) and one per hand. Any Transform works, on any rig.
 2. **Plan.** Window > **Kionjo** > New. Add shots and cards, give each a name, a location, a
    planned length, the voice line that plays over it and its subtitle. The timeline bar shows the
-   running length against your target.
+   running length against your target. A new shot takes its picture from the Scene view, so frame
+   the place there first; drop a PNG or JPG on the picture to use your own.
 3. **Shoot.** Enter Play mode with the headset on. Shoot tab: Stage (applies the shot's hide and
    show lists and checks the scene), then **Space** to start and stop a take. Your game can call
    `KionjoRecorder.ToggleTake()` from a controller button, and mark moments with
@@ -85,11 +92,30 @@ With `com.unity.pipeline` installed, every verb is a CLI command:
 `unity command kionjo status --project-path "<project>"`. See
 [Documentation~/AgentGuide.md](Documentation~/AgentGuide.md).
 
+## Help
+
+- [Getting started](https://seedexr.github.io/kionjo-docs/guide.html), step by step.
+- [I want to...](https://seedexr.github.io/kionjo-docs/goals.html): a VR trailer, a flat trailer,
+  an animatic, voice and subtitles, 4K, an edit in Premiere or Resolve, and more.
+- [Troubleshooting](https://seedexr.github.io/kionjo-docs/troubleshooting.html).
+- In the window: hover anything for a tooltip, click the ? next to a heading for its page, or
+  Help > Guided tour.
+- Bugs and ideas: [GitHub issues](https://github.com/SeedeXR/kionjo/issues).
+
 ## Status
 
-v0.1, in development. Tested headless (EditMode and PlayMode, 139 tests) and live in the editor;
+v0.1, in development. Tested headless (EditMode and PlayMode, 142 tests) and live in the editor;
 the headset pass is [Documentation~/HeadsetPass.md](Documentation~/HeadsetPass.md).
 
 ## License
 
 MIT, see [LICENSE.md](LICENSE.md).
+
+Kionjo does not bundle third party programs. It runs the ffmpeg you install (its own licence, LGPL
+or GPL depending on the build, applies to it), and, if you choose, a Python with faster-whisper
+(MIT). Kionjo itself makes no network calls; faster-whisper downloads its speech model the first
+time Words trimming runs.
+
+## Contact
+
+Kionjo is made by SeedeXR: [seedexr.com](https://seedexr.com/).

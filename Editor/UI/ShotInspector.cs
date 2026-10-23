@@ -40,12 +40,7 @@ namespace SeedeXR.Kionjo.EditorTools
             schedule.Execute(UpdateButtons).Every(500);
         }
 
-        void Section(string title)
-        {
-            var l = new Label(title);
-            l.AddToClassList("kionjo-section");
-            Add(l);
-        }
+        void Section(string title) => Add(KionjoHelp.Section(title));
 
         void Field(string relative)
         {
@@ -126,13 +121,20 @@ namespace SeedeXR.Kionjo.EditorTools
                 return; // cards are drawn by the cut: no camera picture, no render
             }
             Section("Picture");
-            _preview = new Image { scaleMode = ScaleMode.ScaleToFit, image = KionjoThumbnails.Get(_target.thumbnailPath) };
+            _preview = new Image
+            {
+                name = "picture-preview",
+                scaleMode = ScaleMode.ScaleToFit,
+                image = KionjoThumbnails.Get(_target.thumbnailPath),
+                tooltip = "The shot's picture, on its card and in the animatic. Drop a PNG or JPG here to use it instead.",
+            };
             _preview.AddToClassList("kionjo-thumb-preview");
+            RegisterImageDrop(_preview);
             Add(_preview);
             var row = new VisualElement();
             row.AddToClassList("kionjo-row");
-            if (!_target.IsCard)
-                row.Add(new Button(CaptureThumbnail) { name = "capture-thumbnail", text = "Capture thumbnail", tooltip = "Grab one frame from the camera (Kionjo Camera Source, else the main camera) as this shot's picture." });
+            row.Add(new Button(() => Picture(KionjoShotPicture.TryFromSceneView)) { name = "capture-scene-view", text = "From Scene view", tooltip = "Take the picture from the Scene view as it is framed now. New shots do this on their own." });
+            row.Add(new Button(() => Picture(KionjoShotPicture.TryFromCamera)) { name = "capture-thumbnail", text = "From camera", tooltip = "Take the picture from the game camera (Kionjo Camera Source, else the main camera)." });
             if (_target.type is KionjoShotType.Performance or KionjoShotType.LiveCamera && _target.outputMode == KionjoOutputMode.OfflineRender)
             {
                 _render = new Button(Render) { name = "render-take", text = "Render selected take" };
@@ -189,22 +191,37 @@ namespace SeedeXR.Kionjo.EditorTools
             return result.ToArray();
         }
 
-        void CaptureThumbnail()
+        delegate bool PictureSource(KionjoStoryboard sb, KionjoShot shot, out string message);
+
+        void Picture(PictureSource source)
         {
-            var cam = KionjoCameraSource.Resolve();
-            if (cam == null)
-            {
-                _message.text = "No camera: add a Kionjo Camera Source or tag a camera MainCamera.";
-                return;
-            }
-            var path = KionjoPaths.ThumbnailPath(_window.Storyboard, _target);
-            KionjoStill.CapturePng(cam, path, 480, 270);
-            KionjoThumbnails.Forget(path);
+            source(_window.Storyboard, _target, out var message);
             _so.Update();
-            _shot.FindPropertyRelative("thumbnailPath").stringValue = path;
-            _so.ApplyModifiedProperties();
-            _preview.image = KionjoThumbnails.Get(path);
-            _message.text = $"Thumbnail saved from {cam.name}.";
+            _preview.image = KionjoThumbnails.Get(_target.thumbnailPath);
+            _message.text = message;
+            Changed?.Invoke();
+        }
+
+        void RegisterImageDrop(VisualElement zone)
+        {
+            zone.RegisterCallback<DragUpdatedEvent>(_ =>
+            {
+                if (DroppedImage() != null) DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+            });
+            zone.RegisterCallback<DragPerformEvent>(_ =>
+            {
+                var file = DroppedImage();
+                if (file == null) return;
+                DragAndDrop.AcceptDrag();
+                Picture((KionjoStoryboard sb, KionjoShot shot, out string message) => KionjoShotPicture.TryFromFile(sb, shot, file, out message));
+            });
+        }
+
+        static string DroppedImage()
+        {
+            foreach (var p in DragAndDrop.paths)
+                if (KionjoShotPicture.IsImage(p)) return p;
+            return null;
         }
 
         void ImportCapture()

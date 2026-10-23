@@ -1,4 +1,4 @@
-"""Draws the Kionjo icon set from the same shapes as Editor/Icons/kionjo.svg.
+"""Draws the Kionjo icon set from the same shapes as Tools~/kionjo.svg.
 
 The mark: a film frame that is also a headset visor. A rounded frame with a nose bridge notch
 in its lower edge, and two lenses inside it. Drawn on a 1024 px canvas (a 16 unit grid) with Pillow, then

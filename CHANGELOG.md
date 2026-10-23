@@ -26,6 +26,11 @@ All notable changes to Kionjo are documented here. The format follows
   Premiere Pro and DaVinci Resolve, and a re-runnable `commands.txt`.
 - Device capture import and organise only mode with an index.
 - Preferences > Kionjo: ffmpeg path, encoder override (for example NVENC), Python path.
+- Help that teaches as you go: a tooltip on every field and button, a ? next to each inspector
+  heading that opens its page on the documentation site, a Help menu (guide, this tab's docs,
+  troubleshooting) and a guided tour on the first open.
+- Shot pictures that fill themselves: a new shot takes its picture from the Scene view; From Scene
+  view, From camera, or drop a PNG or JPG on the picture to change it.
 - Agent bridge (with `com.unity.pipeline` 0.9 or newer): the `kionjo` CLI command group,
   `state.json`, storyboard JSON import and export.
 - Quick Start sample; headset pass script; agent guide.

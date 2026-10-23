@@ -15,7 +15,7 @@ namespace SeedeXR.Kionjo.EditorTools
     {
         public enum Tab { Storyboard, Shoot, Cut }
 
-        public const string HelpUrl = "https://github.com/SeedeXR/kionjo#readme";
+        public const string HelpUrl = KionjoHelp.Guide;
         const string LastKey = "SeedeXR.Kionjo.LastStoryboard";
         const string UssPath = "Packages/com.seedexr.kionjo/Editor/UI/KionjoWindow.uss";
 
@@ -162,6 +162,17 @@ namespace SeedeXR.Kionjo.EditorTools
 
             root.Add(BuildStatusBar());
             Rebuild();
+            if (!EditorPrefs.GetBool(KionjoTour.SeenKey, false) && !Application.isBatchMode) ShowTour();
+        }
+
+        /// <summary>Opens the guided tour at its first step (Help > Guided tour).</summary>
+        public KionjoTour ShowTour()
+        {
+            rootVisualElement.Q<KionjoTour>()?.Close();
+            var tour = new KionjoTour(this);
+            rootVisualElement.Add(tour);
+            tour.Go(0);
+            return tour;
         }
 
         VisualElement BuildToolbar()
@@ -184,7 +195,13 @@ namespace SeedeXR.Kionjo.EditorTools
 
             bar.Add(new VisualElement { style = { flexGrow = 1 } });
             bar.Add(new ToolbarButton(KionjoPreferences.Open) { name = "preferences", text = "Settings", tooltip = "Preferences > Kionjo: ffmpeg path, encoder, Python." });
-            bar.Add(new ToolbarButton(() => Application.OpenURL(HelpUrl)) { name = "help", text = "Help", tooltip = "Open the Kionjo guide." });
+            var help = new ToolbarMenu { name = "help", text = "Help", tooltip = "The Kionjo guide, the docs for this tab, or the guided tour." };
+            help.menu.AppendAction("Getting started guide", _ => Application.OpenURL(HelpUrl));
+            help.menu.AppendAction("Docs for this tab", _ => Application.OpenURL(KionjoHelp.TabUrl(tab)));
+            help.menu.AppendAction("Troubleshooting", _ => Application.OpenURL(KionjoHelp.Troubleshooting));
+            help.menu.AppendSeparator();
+            help.menu.AppendAction("Guided tour", _ => ShowTour());
+            bar.Add(help);
             return bar;
         }
 
@@ -337,6 +354,7 @@ namespace SeedeXR.Kionjo.EditorTools
                 storyboard.shots.Insert(at, shot);
             }
             selected = at;
+            if (type != KionjoShotType.Card) KionjoShotPicture.TryFromSceneView(storyboard, shot, out _);
             Rebuild();
         }
 
@@ -432,9 +450,7 @@ namespace SeedeXR.Kionjo.EditorTools
         {
             var box = new VisualElement { style = { marginTop = 12 } };
             box.AddToClassList("kionjo-inspector");
-            var head = new Label("Storyboard");
-            head.AddToClassList("kionjo-section");
-            box.Add(head);
+            box.Add(KionjoHelp.Section("Storyboard"));
             foreach (var p in new[] { "title", "outputFolder", "targetSeconds", "renderPreset", "cutPreset", "subtitles", "music", "musicCrossfadeSeconds", "ducking", "loudness", "renderQuality" })
                 box.Add(new UnityEditor.UIElements.PropertyField(_so.FindProperty(p)));
             box.Bind(_so);

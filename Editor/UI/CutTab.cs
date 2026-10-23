@@ -87,7 +87,7 @@ namespace SeedeXR.Kionjo.EditorTools
             var logHead = new Label("Log");
             logHead.AddToClassList("kionjo-section");
             Add(logHead);
-            _log = new TextField { name = "cut-log", multiline = true, isReadOnly = true };
+            _log = new TextField { name = "cut-log", multiline = true, isReadOnly = true, tooltip = "Output of the last job. A cut also keeps it as cut.log in its draft folder." };
             _log.AddToClassList("kionjo-log");
             Add(_log);
         }

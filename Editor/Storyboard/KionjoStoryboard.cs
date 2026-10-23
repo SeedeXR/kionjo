@@ -19,14 +19,23 @@ namespace SeedeXR.Kionjo.EditorTools
         public string outputFolder = "Kionjo";
         [Tooltip("Target running time in seconds. The timeline bar warns past it.")]
         public float targetSeconds = 60f;
+        [Tooltip("The shots and cards, in trailer order.")]
         public List<KionjoShot> shots = new();
+        [Tooltip("Music cues, placed at absolute times in the cut.")]
         public List<KionjoMusicCue> music = new();
+        [Tooltip("Crossfade between consecutive music cues, in seconds. 0 joins them end to end.")]
         public float musicCrossfadeSeconds = 2f;
+        [Tooltip("Lowers the music under the voice.")]
         public KionjoDucking ducking = new();
+        [Tooltip("Final loudness of the cut.")]
         public KionjoLoudness loudness = new();
+        [Tooltip("Font, size and colour of subtitles, and the font of text cards.")]
         public KionjoSubtitleStyle subtitles = new();
+        [Tooltip("Frame size and rate of each shot's render. Preview while you work, 4K for the final.")]
         public KionjoRenderPreset renderPreset = KionjoRenderPreset.Preview720p30;
+        [Tooltip("Frame size and rate of the assembled draft.")]
         public KionjoCutPreset cutPreset = KionjoCutPreset.Preview720p30;
+        [Tooltip("Higher quality settings used only while rendering.")]
         public KionjoQualityOverride renderQuality = new();
 
         public KionjoShot AddShot(KionjoShotType type = KionjoShotType.Performance)

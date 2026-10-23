@@ -81,8 +81,20 @@ public static class KionjoQuickStart
         end.cardLines.Add("Coming soon");
         end.targetSeconds = 4f;
         AssetDatabase.CreateAsset(sb, $"{folder}/My Trailer.asset");
+
+        // A picture per shot from the head camera, posed like the shot, so the cards and the animatic have something to show.
+        var home = head.transform.localPosition;
+        Picture(sb, wide, head.transform, new Vector3(0, 6, -12), new Vector3(20, 0, 0));
+        Picture(sb, close, head.transform, new Vector3(1.5f, 1.6f, -1), new Vector3(0, -12, 0));
+        head.transform.SetLocalPositionAndRotation(home, Quaternion.identity);
         AssetDatabase.SaveAssets();
         KionjoWindow.Open().Storyboard = sb;
         Debug.Log("Kionjo: Quick Start built. Enter Play mode, open the Shoot tab, press Space twice to record a take, then Render and Cut.");
+    }
+
+    static void Picture(KionjoStoryboard sb, KionjoShot shot, Transform head, Vector3 position, Vector3 euler)
+    {
+        head.SetLocalPositionAndRotation(position, Quaternion.Euler(euler));
+        if (!KionjoShotPicture.TryFromCamera(sb, shot, out var message)) Debug.LogWarning($"Kionjo: {message}");
     }
 }

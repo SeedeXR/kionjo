@@ -88,6 +88,62 @@ namespace SeedeXR.Kionjo.Tests
         }
 
         [Test]
+        public void Inspector_SectionsHaveHelp_AndPictureSources()
+        {
+            _sb = ScriptableObject.CreateInstance<KionjoStoryboard>();
+            _sb.AddShot();
+            _w = KionjoWindow.Open();
+            _w.Storyboard = _sb;
+            foreach (var id in new[] { "help-shot", "help-source", "help-timing", "help-staging", "help-voice", "help-picture", "picture-preview", "capture-scene-view", "capture-thumbnail" })
+                Assert.IsNotNull(_w.rootVisualElement.Q(id), id);
+            StringAssert.EndsWith("reference.html#timing", KionjoHelp.Reference(KionjoHelp.SectionAnchors["Timing"]));
+            StringAssert.EndsWith("reference.html#cut-tab", KionjoHelp.TabUrl(KionjoWindow.Tab.Cut));
+        }
+
+        [Test]
+        public void Tour_WalksTheSteps_SwitchesTabs_AndCloses()
+        {
+            bool seen = EditorPrefs.GetBool(KionjoTour.SeenKey, false);
+            try
+            {
+                _sb = ScriptableObject.CreateInstance<KionjoStoryboard>();
+                _sb.AddShot();
+                _w = KionjoWindow.Open();
+                _w.Storyboard = _sb;
+                var tour = _w.ShowTour();
+                Assert.AreEqual("Step 1 of " + KionjoTour.Steps.Length, _w.rootVisualElement.Q<Label>("tour-count").text);
+                tour.Go(4);
+                Assert.AreEqual(KionjoWindow.Tab.Shoot, _w.CurrentTab);
+                tour.Go(KionjoTour.Steps.Length);
+                Assert.IsNull(_w.rootVisualElement.Q<KionjoTour>(), "Finish closes the tour");
+            }
+            finally
+            {
+                EditorPrefs.SetBool(KionjoTour.SeenKey, seen);
+            }
+        }
+
+        [Test]
+        public void Picture_FromFile_IsStoredAsTheShotsPng()
+        {
+            var dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "KionjoTests", TestContext.CurrentContext.Test.Name);
+            if (System.IO.Directory.Exists(dir)) System.IO.Directory.Delete(dir, true);
+            System.IO.Directory.CreateDirectory(dir);
+            var src = System.IO.Path.Combine(dir, "frame.jpg");
+            var tex = new Texture2D(8, 4);
+            System.IO.File.WriteAllBytes(src, tex.EncodeToJPG());
+            Object.DestroyImmediate(tex);
+            _sb = ScriptableObject.CreateInstance<KionjoStoryboard>();
+            _sb.outputFolder = dir;
+            var shot = _sb.AddShot();
+
+            Assert.IsTrue(KionjoShotPicture.TryFromFile(_sb, shot, src, out var message), message);
+            Assert.AreEqual(KionjoPaths.ThumbnailPath(_sb, shot), shot.thumbnailPath);
+            Assert.AreEqual(8, KionjoThumbnails.Get(shot.thumbnailPath).width);
+            Assert.IsFalse(KionjoShotPicture.TryFromFile(_sb, shot, System.IO.Path.Combine(dir, "notes.txt"), out _));
+        }
+
+        [Test]
         public void Timeline_TotalLabel_FormatsSeconds() => Assert.AreEqual("81.5 s / target 60 s", TimelineBar.FormatTotal(81.5f, 60f));
     }
 }

@@ -27,7 +27,9 @@ namespace SeedeXR.Kionjo
         public bool rollLock = true;
         [Tooltip("Advance time by exactly 1 / fps per frame, whatever the real frame time.")]
         public bool lockFrameRate = true;
+        [Tooltip("Frames per second of the replay when Lock Frame Rate is on.")]
         public float fps = 60f;
+        [Tooltip("Raised with (name, value) when a recorded event is reached, to put the scene in the same state. Never presses anything.")]
         public UnityEvent<string, string> onEvent = new();
 
         public event Action<string, string> EventFired;
