@@ -40,7 +40,8 @@ namespace SeedeXR.Kionjo.Tests
             CollectionAssert.AreEqual(new[]
             {
                 "-v", "error", "-y", "-ss", "0.5", "-t", "6", "-i", "D:/T/S03_take06.mp4", "-an",
-                "-vf", "scale=1280:720,fps=30,format=yuv420p,fade=t=in:st=0:d=3",
+                "-vf", "scale=1280:720,fps=30,format=yuv420p,tpad=stop_mode=clone:stop_duration=6,fade=t=in:st=0:d=3",
+                "-frames:v", "180",
                 "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "seg/01_S03.mp4",
             }, CutCommandBuilder.Segment(s, p).Args);
         }
@@ -188,6 +189,51 @@ namespace SeedeXR.Kionjo.Tests
             StringAssert.Contains("volume=0.9,adelay=52070|52070[x0]", f);
             StringAssert.Contains("volume=0.9,adelay=55010|55010[x1]", f);
             StringAssert.EndsWith("[sfx]loudnorm=I=-14:TP=-1.5:LRA=11[a]", f);
+        }
+
+        [Test]
+        public void ZeroFades_AreLeftOut()
+        {
+            Assert.AreEqual("", CutCommandBuilder.AudioFades(0f, 0f, 4f));
+            Assert.AreEqual("afade=t=out:st=3.75:d=0.25,", CutCommandBuilder.AudioFades(0f, 0.25f, 4f));
+        }
+
+        [Test]
+        public void Music_ZeroCrossfade_UsesConcat()
+        {
+            var p = Plan();
+            p.Segments.Add(new CutSegment { Duration = 20f });
+            p.MusicCrossfade = 0f;
+            p.Music.Add(new AudioCue { Path = "a.mp3", TrimOut = 5f, Volume = 0.5f });
+            p.Music.Add(new AudioCue { Path = "b.mp3", TrimOut = 5f });
+            p.Music.Add(new AudioCue { Path = "c.mp3", TrimOut = 5f });
+            var f = CutCommandBuilder.AudioGraph(p).Args.First(a => a.Contains("loudnorm"));
+            StringAssert.Contains("[m0][m1][m2]concat=n=3:v=0:a=1,volume=0.5,", f);
+            Assert.IsFalse(f.Contains("acrossfade"));
+        }
+
+        [Test]
+        public void Music_ThreeCues_CrossfadeChain()
+        {
+            var p = Plan();
+            p.Segments.Add(new CutSegment { Duration = 60f });
+            p.MusicCrossfade = 2f;
+            p.Music.Add(new AudioCue { Path = "a.mp3", TrimOut = 20f, Volume = 0.5f });
+            p.Music.Add(new AudioCue { Path = "b.mp3", TrimOut = 20f });
+            p.Music.Add(new AudioCue { Path = "c.mp3", TrimOut = 20f });
+            var f = CutCommandBuilder.AudioGraph(p).Args.First(a => a.Contains("loudnorm"));
+            StringAssert.Contains("[m0][m1]acrossfade=d=2:c1=tri:c2=tri[mj1];[mj1][m2]acrossfade=d=2:c1=tri:c2=tri,volume=0.5", f);
+        }
+
+        [Test]
+        public void EverySegment_HasExactFrameCount()
+        {
+            var p = Plan();
+            foreach (var kind in new[] { SegmentKind.Black, SegmentKind.Text, SegmentKind.Image, SegmentKind.Video })
+            {
+                var args = CutCommandBuilder.Segment(new CutSegment { Label = "x", Kind = kind, SourcePath = "s", Duration = 2.5f, Lines = { "a" } }, p).Args;
+                Assert.AreEqual("75", args[args.IndexOf("-frames:v") + 1], kind.ToString());
+            }
         }
 
         [Test]

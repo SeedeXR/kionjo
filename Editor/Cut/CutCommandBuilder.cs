@@ -76,6 +76,9 @@ namespace SeedeXR.Kionjo.EditorTools
                     c.Add("-f", "lavfi", "-i", BlackSource(s, p), "-vf", "format=yuv420p");
                     break;
             }
+            // Exactly round(D * fps) frames per segment, so the picture never drifts from the voice,
+            // music and subtitles, which are all placed by planned durations.
+            c.Add("-frames:v", Mathf.Max(1, Mathf.RoundToInt(s.Duration * p.Fps)).ToString(CultureInfo.InvariantCulture));
             c.Add(p.EncoderArgs);
             c.Add(SegmentFile(s));
             return c;
@@ -96,7 +99,8 @@ namespace SeedeXR.Kionjo.EditorTools
             var crop = s.Crop.width > 0f && s.Crop.height > 0f
                 ? $"crop=iw*{F(s.Crop.width)}:ih*{F(s.Crop.height)}:iw*{F(s.Crop.x)}:ih*{F(s.Crop.y)},"
                 : "";
-            return $"{crop}scale={p.Width}:{p.Height},fps={p.Fps},format=yuv420p{Fades(s)}";
+            // tpad holds the last frame when the source ends before the planned out point.
+            return $"{crop}scale={p.Width}:{p.Height},fps={p.Fps},format=yuv420p,tpad=stop_mode=clone:stop_duration={F(s.Duration)}{Fades(s)}";
         }
 
         /// <summary>Fills the frame without stretching (scale up then crop), optional slow push in, fades.</summary>
@@ -188,7 +192,7 @@ namespace SeedeXR.Kionjo.EditorTools
                 {
                     var v = p.Voice[i];
                     c.Add("-ss", F(v.TrimIn), "-t", F(v.Length), "-i", v.Path);
-                    f.Append($"[{input}:a]{Stereo48},afade=t=in:d={F(v.FadeIn)},afade=t=out:st={F(Mathf.Max(0f, v.Length - v.FadeOut))}:d={F(v.FadeOut)},adelay={Ms(v.FilmAt)}|{Ms(v.FilmAt)}[v{i}];");
+                    f.Append($"[{input}:a]{Stereo48},{AudioFades(v.FadeIn, v.FadeOut, v.Length)}adelay={Ms(v.FilmAt)}|{Ms(v.FilmAt)}[v{i}];");
                     labels.Append($"[v{i}]");
                 }
                 f.Append($"{labels}amix=inputs={p.Voice.Count}:normalize=0,apad,atrim=0:{T}");
@@ -208,16 +212,28 @@ namespace SeedeXR.Kionjo.EditorTools
                 float musicLength = p.Music.Sum(m => m.Length) - xf * (p.Music.Count - 1);
                 float audible = Mathf.Min(musicLength, total - first.FilmAt);
                 float fadeOutAt = Mathf.Max(0f, audible - first.FadeOut);
-                // Later cues follow the first, joined by crossfades; only the first cue's time places the music.
-                string chain = "[m0]";
-                for (int i = 1; i < p.Music.Count; i++)
-                {
-                    bool last = i == p.Music.Count - 1;
-                    chain += $"[m{i}]acrossfade=d={F(xf)}:c1=tri:c2=tri" + (last ? "," : $"[mj{i}];[mj{i}]");
-                }
+                // Later cues follow the first, joined by crossfades (or butted with concat when the
+                // crossfade is 0: acrossfade d=0 means its 0.9 s default); only the first cue's time places the music.
+                string chain;
                 if (p.Music.Count == 1) chain = "[m0]";
+                else if (xf <= 0f)
+                {
+                    chain = "";
+                    for (int i = 0; i < p.Music.Count; i++) chain += $"[m{i}]";
+                    chain += $"concat=n={p.Music.Count}:v=0:a=1,";
+                }
+                else
+                {
+                    chain = "[m0]";
+                    for (int i = 1; i < p.Music.Count; i++)
+                    {
+                        bool last = i == p.Music.Count - 1;
+                        chain += $"[m{i}]acrossfade=d={F(xf)}:c1=tri:c2=tri" + (last ? "," : $"[mj{i}];[mj{i}]");
+                    }
+                }
                 f.Append(chain)
-                 .Append($"afade=t=in:d={F(first.FadeIn)},afade=t=out:st={F(fadeOutAt)}:d={F(first.FadeOut)},volume={F(first.Volume)},adelay={Ms(first.FilmAt)}|{Ms(first.FilmAt)},apad,atrim=0:{T}[mus];");
+                 .Append(AudioFades(first.FadeIn, first.FadeOut, fadeOutAt + first.FadeOut))
+                 .Append($"volume={F(first.Volume)},adelay={Ms(first.FilmAt)}|{Ms(first.FilmAt)},apad,atrim=0:{T}[mus];");
             }
 
             if (p.Sfx.Count > 0)
@@ -250,6 +266,18 @@ namespace SeedeXR.Kionjo.EditorTools
 
             c.Add("-filter_complex", f.ToString(), "-map", "[a]", "-c:a", "pcm_s16le", "-ar", "48000", Audio);
             return c;
+        }
+
+        /// <summary>
+        /// "afade=t=in:d=..,afade=t=out:st=..:d=..," with each fade left out when its length is 0:
+        /// afade reads d=0 as "use the default", which is a 0.9 s fade that swallows a first word.
+        /// </summary>
+        public static string AudioFades(float fadeIn, float fadeOut, float length)
+        {
+            var sb = new StringBuilder();
+            if (fadeIn > 0f) sb.Append($"afade=t=in:d={F(fadeIn)},");
+            if (fadeOut > 0f) sb.Append($"afade=t=out:st={F(Mathf.Max(0f, length - fadeOut))}:d={F(fadeOut)},");
+            return sb.ToString();
         }
 
         public static FfmpegCommand Mux(CutPlan p, string outputFile)
