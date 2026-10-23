@@ -148,6 +148,12 @@ namespace SeedeXR.Kionjo.EditorTools
             var sb = _window.Storyboard;
             var ffmpeg = FfmpegLocator.FindFfmpeg();
             if (sb == null || ffmpeg == null) return;
+            if (KionjoJobs.IsBusy)
+            {
+                // the plan picks its sources now: building behind running renders would miss them
+                _log.SetValueWithoutNotify("A job is running. Build the draft when it has finished.");
+                return;
+            }
             var plan = CutPlanBuilder.Build(sb, sb.cutPreset, new FfprobeMediaProbe(), animatic, WordTimer.Resolver(ffmpeg));
             _warningItems.Clear();
             _warningItems.AddRange(plan.Warnings);

@@ -145,11 +145,13 @@ namespace SeedeXR.Kionjo.Agent
                 sb.cutPreset = p;
             }
             if (FfmpegLocator.FindFfmpeg() == null) return Fail("ffmpeg not found: set its path in Preferences > Kionjo.");
+            if (KionjoJobs.IsBusy) return Fail("A job is running: wait until 'kionjo status' shows job.running false, then cut.");
             var tab = w.rootVisualElement.Q<CutTab>();
+            var before = tab.LastJob;
             if (animatic) tab.BuildAnimatic();
             else tab.BuildDraft();
             var job = tab.LastJob;
-            return job == null
+            return job == null || job == before
                 ? Fail("Nothing to cut yet: render a shot, import a capture or add a card.")
                 : new { ok = true, message = $"Building {job.Title}. Watch 'kionjo status' job.", folder = job.Folder };
         }
@@ -159,7 +161,16 @@ namespace SeedeXR.Kionjo.Agent
         {
             var sb = Storyboard();
             if (sb == null) return Fail("No storyboard open.");
-            File.WriteAllText(json, KionjoStoryboardJson.Export(sb));
+            try
+            {
+                var dir = Path.GetDirectoryName(Path.GetFullPath(json));
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(json, KionjoStoryboardJson.Export(sb));
+            }
+            catch (System.Exception e) when (e is IOException or System.UnauthorizedAccessException or System.ArgumentException)
+            {
+                return Fail($"Could not write {json}: {e.Message}");
+            }
             return new { ok = true, message = $"Wrote {json}." };
         }
 
@@ -171,7 +182,15 @@ namespace SeedeXR.Kionjo.Agent
             var sb = w?.Storyboard;
             if (sb == null) return Fail("No storyboard open.");
             if (!File.Exists(json)) return Fail($"No file {json}.");
-            int n = KionjoStoryboardJson.Import(sb, File.ReadAllText(json), replace);
+            int n;
+            try
+            {
+                n = KionjoStoryboardJson.Import(sb, File.ReadAllText(json), replace);
+            }
+            catch (System.Exception e) when (e is IOException or System.ArgumentException)
+            {
+                return Fail($"Could not read {json} as a storyboard: {e.Message}");
+            }
             AssetDatabase.SaveAssets();
             w.Rebuild();
             return new { ok = true, message = $"Imported {n} shot(s){(replace ? ", replacing the storyboard" : "")}." };

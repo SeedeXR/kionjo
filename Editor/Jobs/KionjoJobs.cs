@@ -23,6 +23,13 @@ namespace SeedeXR.Kionjo.EditorTools
 
         public static bool IsBusy => Current != null && !Current.IsDone;
 
+        /// <summary>A script reload would drop the job but leave its ffmpeg running: cancel first.</summary>
+        [InitializeOnLoadMethod]
+        static void HookReload() => AssemblyReloadEvents.beforeAssemblyReload += () =>
+        {
+            if (IsBusy) Cancel();
+        };
+
         /// <summary>Starts the job now, or queues it behind the running one.</summary>
         public static void Enqueue(KionjoJob job)
         {
@@ -90,7 +97,8 @@ namespace SeedeXR.Kionjo.EditorTools
                 Last = Current;
                 Current = null;
                 if (Last.Failed && Last.Error != "Cancelled") Debug.LogWarning($"Kionjo: {Last.Title} failed. {Last.Error}");
-                if (Queue.Count > 0 && !(Last.Failed && Last.Error == "Cancelled")) Start(Queue.Dequeue());
+                if (Last.Failed && Last.Error == "Cancelled") Queue.Clear(); // e.g. Play mode ended mid render
+                else if (Queue.Count > 0) Start(Queue.Dequeue());
             }
             Changed?.Invoke();
             if (Current == null)
