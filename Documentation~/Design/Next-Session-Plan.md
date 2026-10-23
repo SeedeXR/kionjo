@@ -1,5 +1,26 @@
 # Kionjo: next session plan (from Bernard, 2026-10-23 morning)
 
+## Status 2026-10-23 (late morning session)
+
+Done and pushed (2dcdb0e, ba56c8c, 011e50e): every field and button has a tooltip; a ? per inspector
+heading opens reference.html#<anchor> (contract in Editor/UI/KionjoHelp.cs); Help is a menu (guide,
+this tab, troubleshooting, guided tour); guided first run tour (Editor/UI/KionjoTour.cs, shown once,
+EditorPrefs SeedeXR.Kionjo.TourSeen); pictures: a new shot takes its picture from the Scene view
+(default, because planning happens with the place framed there), From Scene view / From camera
+buttons, drop a PNG or JPG, renders still replace it; Quick Start shots ship with pictures;
+Storyboard settings button (settings were unreachable while a shot was selected); status bar shows
+the ffmpeg version only (path in tooltip); README with docs, help, third party, contact. 142 tests
+green. Git URL install verified in a fresh URP project (Kionjo-InstallCheck): resolve, compile, 125
+EditMode green, Quick Start, record, render, draft and animatic all worked.
+
+Docs site: local repo D:\BERNARD\kionjo-docs (not pushed), real screenshots from the fresh project.
+
+Waiting on Bernard: flip kionjo public, create SeedeXR/kionjo-docs + Pages, tag v0.1.0.
+
+Screenshots: never use InternalEditorUtility.ReadScreenPixel (it reads the physical screen and
+captured another app once). Use GUIView.GrabPixels on the window's m_Parent with a magenta self
+test first; it does not refresh in Play mode, so Play mode states cannot be captured that way.
+
 Bernard saw the window in Baraza, likes it, and wants to try Kionjo as a complete newcomer would,
 with no AI agent, then fix what he finds. This batch makes that possible. Read this file, the
 overnight report (Overnight-Report-2026-10-23.md) and spec section 12b first.
