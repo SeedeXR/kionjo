@@ -104,7 +104,17 @@ namespace SeedeXR.Kionjo.EditorTools
             if (_cachedFor == exe && _cachedStatus != null) return _cachedStatus;
             _cachedFor = exe;
             _cachedStatus = TryGetVersion(exe, out var v) ? $"ffmpeg {v} at {exe}" : $"ffmpeg at {exe} did not answer -version";
+            _cachedShort = v != null ? $"ffmpeg {v} ready" : "ffmpeg did not answer -version";
             return _cachedStatus;
+        }
+
+        static string _cachedShort;
+
+        /// <summary>Status without the path, for the status bar; the full Status() goes in its tooltip.</summary>
+        public static string ShortStatus()
+        {
+            var full = Status();
+            return FindFfmpeg() == null ? full : _cachedShort ?? full;
         }
 
         public static bool IsAvailable => FindFfmpeg() != null;

@@ -96,7 +96,8 @@ namespace SeedeXR.Kionjo.EditorTools
         {
             var sb = _window.Storyboard;
             bool ffmpeg = FfmpegLocator.IsAvailable;
-            _ffmpegLine.text = ffmpeg ? FfmpegLocator.Status() : "ffmpeg not found. Set its path in Preferences > Kionjo.";
+            _ffmpegLine.text = ffmpeg ? FfmpegLocator.ShortStatus() : "ffmpeg not found. Set its path in Preferences > Kionjo.";
+            _ffmpegLine.tooltip = ffmpeg ? FfmpegLocator.Status() : "";
             _ffmpegLine.EnableInClassList("kionjo-ok", ffmpeg);
             _ffmpegLine.EnableInClassList("kionjo-bad", !ffmpeg);
             if (sb == null) return;

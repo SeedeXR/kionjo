@@ -483,9 +483,9 @@ namespace SeedeXR.Kionjo.EditorTools
         {
             if (_ffmpegStatus == null) return;
             bool ok = FfmpegLocator.IsAvailable;
-            _ffmpegStatus.text = ok ? FfmpegLocator.Status() : "ffmpeg not found: click to set its path";
+            _ffmpegStatus.text = ok ? FfmpegLocator.ShortStatus() : "ffmpeg not found: click to set its path";
             _ffmpegStatus.EnableInClassList("kionjo-bad", !ok);
-            _ffmpegStatus.tooltip = ok ? "ffmpeg renders and cuts. Change it in Preferences > Kionjo." : "Kionjo needs ffmpeg to render and cut. Click to open Preferences > Kionjo.";
+            _ffmpegStatus.tooltip = ok ? $"{FfmpegLocator.Status()}. It renders and cuts; change it in Preferences > Kionjo." : "Kionjo needs ffmpeg to render and cut. Click to open Preferences > Kionjo.";
             var job = KionjoJobs.Current ?? KionjoJobs.Last;
             bool running = KionjoJobs.IsBusy;
             _jobLabel.text = job == null ? "" : running
