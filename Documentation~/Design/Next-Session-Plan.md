@@ -13,9 +13,9 @@ the ffmpeg version only (path in tooltip); README with docs, help, third party, 
 green. Git URL install verified in a fresh URP project (Kionjo-InstallCheck): resolve, compile, 125
 EditMode green, Quick Start, record, render, draft and animatic all worked.
 
-Docs site: local repo D:\BERNARD\kionjo-docs (not pushed), real screenshots from the fresh project.
+Docs site: SeedeXR/kionjo-docs, live at https://seedexr.github.io/kionjo-docs/ (GitHub Pages, main, root).
 
-Waiting on Bernard: flip kionjo public, create SeedeXR/kionjo-docs + Pages, tag v0.1.0.
+Published 10-23 with Bernard's go: kionjo PUBLIC, tag v0.1.0, docs live. Kionjo-InstallCheck deleted. Next: Bernard's newcomer trial in his own fresh project (section 6).
 
 Screenshots: never use InternalEditorUtility.ReadScreenPixel (it reads the physical screen and
 captured another app once). Use GUIView.GrabPixels on the window's m_Parent with a magenta self
