@@ -194,7 +194,7 @@ namespace SeedeXR.Kionjo.EditorTools
             bar.Add(_tabCut);
 
             bar.Add(new VisualElement { style = { flexGrow = 1 } });
-            bar.Add(new ToolbarButton(KionjoPreferences.Open) { name = "preferences", text = "Settings", tooltip = "Preferences > Kionjo: ffmpeg path, encoder, Python." });
+            bar.Add(new ToolbarButton(KionjoPreferences.Open) { name = "preferences", text = "Preferences", tooltip = "Preferences > Kionjo: ffmpeg path, encoder, Python." });
             var help = new ToolbarMenu { name = "help", text = "Help", tooltip = "The Kionjo guide, the docs for this tab, or the guided tour." };
             help.menu.AppendAction("Getting started guide", _ => Application.OpenURL(HelpUrl));
             help.menu.AppendAction("Docs for this tab", _ => Application.OpenURL(KionjoHelp.TabUrl(tab)));
@@ -294,6 +294,7 @@ namespace SeedeXR.Kionjo.EditorTools
             footer.Add(new Button(() => AddShot(KionjoShotType.Card)) { name = "add-card", text = "Add card", tooltip = "Add a black, text or image card (an opening line, closing lines, the cover)." });
             footer.Add(new Button(DuplicateSelected) { name = "duplicate-shot", text = "Duplicate", tooltip = "Duplicate the selected shot (Ctrl+D)." });
             footer.Add(new Button(RemoveSelected) { name = "remove-shot", text = "Remove", tooltip = "Remove the selected shot (Delete). Takes on disk are kept." });
+            footer.Add(new Button(() => SelectedIndex = -1) { name = "storyboard-settings", text = "Storyboard settings", tooltip = "Title, target length, music, subtitles, loudness and presets for the whole trailer." });
             listPane.Add(footer);
             split.Add(listPane);
 

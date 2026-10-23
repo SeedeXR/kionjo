@@ -96,6 +96,9 @@ namespace SeedeXR.Kionjo.Tests
             _w.Storyboard = _sb;
             foreach (var id in new[] { "help-shot", "help-source", "help-timing", "help-staging", "help-voice", "help-picture", "picture-preview", "capture-scene-view", "capture-thumbnail" })
                 Assert.IsNotNull(_w.rootVisualElement.Q(id), id);
+            Assert.IsNotNull(_w.rootVisualElement.Q<Button>("storyboard-settings"));
+            _w.SelectedIndex = -1; // what the Storyboard settings button does
+            Assert.IsNotNull(_w.rootVisualElement.Q("help-storyboard-settings"), "storyboard settings show with their ?");
             StringAssert.EndsWith("reference.html#timing", KionjoHelp.Reference(KionjoHelp.SectionAnchors["Timing"]));
             StringAssert.EndsWith("reference.html#cut-tab", KionjoHelp.TabUrl(KionjoWindow.Tab.Cut));
         }
