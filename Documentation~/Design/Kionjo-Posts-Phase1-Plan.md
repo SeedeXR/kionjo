@@ -28,6 +28,32 @@
 - Shared PC: before every `unity test` or editor launch, check free memory (`Get-CimInstance Win32_OperatingSystem`), announce the heavy job to the other Claude sessions with SendMessage, note `Get-Process Unity` PIDs, and close any Unity process you started before reporting. Never write package files while `unity test` compiles.
 - Commit after each task from `PKG`: `git add -A && git commit -m "<plain message>"`. Do not push.
 
+## Amendment 2026-11-13 (maintainer: "capture every stage, notes and decisions are the supportive text")
+
+- `JournalEntry` gains `string stage` (one of `idea, prototype, build, complete`; default `idea`) and `List<string> decisions` (short sentences, the choices made at this step). Both round-trip in Task 1 (`SaveLoad_RoundTrip_AllFields` covers them; `Create` sets `stage = "idea"`).
+- `KionjoPost.FromEntry` appends each non-empty decision (first sentence) to `overlays` after the beats, so decisions become on-screen text the same way the beats do (Task 3 test `FromEntry_DecisionsFollowBeats`).
+- Execution order chosen by the maintainer: Tasks 1 to 9, then a thin Editor menu item "Tools/Kionjo/Build post from journal entry" (picks an `entry.json`, runs the Task 9 `PostJob` through `KionjoJobs`), then Task 12 acceptance with the AI Curator entry (idea to prototype; the Ghost girl is the second post), then Tasks 10 and 11, then the whole-branch review. No other scope change.
+
+## Evaluation plan (every checkpoint)
+
+Each row is checked when its task closes; the actual result goes into the ledger `progress.md` (git-ignored) with the commit hash. Automatic checks are judged by the test run (exit 0, counts on `<test-run>`); taste checks are judged by the maintainer.
+
+| Checkpoint | What is evaluated | How | Pass | Judge |
+|---|---|---|---|---|
+| Task 1 Journal | Entry format, slug, folders, round trip incl. `stage` and `decisions`, missing media | `JournalTests` (6 named tests) | all pass, earlier tests unchanged | tests |
+| Task 2 Brand kit | ASS colour order, neutral defaults, posts root | `BrandKitTests` (3) | all pass; no studio name in defaults | tests |
+| Task 3 Post model | Hook templates, items, overlays (beats then decisions), cover title | `PostModelTests` (6) | all pass | tests |
+| Task 4 Timing | Safe zone numbers, reading time, schedule (hook at 0.5 s, held 2 s or more) | `PostTimingTests` (6) | all pass | tests |
+| Task 5 ASS | Escaping, centisecond times, exact events, `\kf` captions, header | `AssWriterTests` (5) | all pass | tests |
+| Task 6 Commands | 9:16 fit, last frame hold, paths as one argument, silence for no-audio items, ducking, variants, loop end, caption shift | `PostCommandBuilderTests` (11) | all pass | tests |
+| Task 7 Caption | Exact caption layout, 5 hashtags, 2 sentences, collaborator line | `CaptionWriterTests` (4) | all pass | tests |
+| Task 8 Warnings | Every warning message exact | `PostWarningsTests` (one per message) | all pass | tests |
+| Task 9 Post job | Whole bundle on disk with real ffmpeg; missing media; refusal; silence warning | `PostJobTests` (5) plus ffprobe of `{Name}_9x16.mp4` | 1080x1920, 30 fps, h264 High, yuv420p, AAC 48 kHz stereo, duration within 0.2 s | tests |
+| Task 12 Curator post | The real post | ffprobe: 1080x1920, 30 fps, h264 High, AAC 48 kHz; `ebur128` integrated loudness -14 LUFS within 1.5 (only when there is sound); duration 20 to 45 s; hook event starts at 0.5 s in `post.ass`; all text events inside the safe zone (hook and cover in y 420 to 1500); cover 1080x1920 | all automatic checks pass | ffprobe (numbers); hook, pacing, text look and cover: the maintainer |
+| Task 10 Posts tab | Tab without storyboard, list order, story balance | `PostsTabTests` (3) plus the earlier window tests | all pass, trailer tab tests still pass | tests |
+| Task 11 Build view, docs | Hook buttons, live warnings, build button state; docs | `PostBuildViewTests` (3); editor pass by eye (preview frame with zones, grid) | all pass; window works by eye | tests; by eye: the builder, then the maintainer |
+| Final review | Correctness and requirement gaps on the whole branch | `/code-review` in a fresh context | findings fixed and re-tested | reviewer, then the maintainer |
+
 ## Review Focus
 
 1. Media paths with spaces, dashes and brackets (`D:/Footage/My Game/Ghost look 1 - Pattern.mp4`, `studio-logo-white 1 [Vectorized].png`): each must reach ffmpeg as one argument and never appear inside a filtergraph. Pinned in Task 6 (`Build_PathWithSpacesAndBrackets_IsOneArgument`).
