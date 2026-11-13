@@ -88,6 +88,19 @@ namespace SeedeXR.Kionjo.EditorTools
                 var open = new Toggle("Open the folder after a cut") { value = OpenFolderAfterCut, tooltip = "Reveal the new draft in Explorer or Finder when a cut finishes." };
                 open.RegisterValueChangedCallback(e => OpenFolderAfterCut = e.newValue);
                 root.Add(open);
+
+                var journal = new TextField("Journal folder") { value = KionjoJournal.Folder, tooltip = "Where Posts keeps its journal entries (one folder per entry). One journal for all projects on this machine." };
+                journal.RegisterValueChangedCallback(e => KionjoJournal.Folder = e.newValue);
+                journal.style.flexGrow = 1;
+                var browseJournal = new Button(() =>
+                {
+                    var picked = EditorUtility.OpenFolderPanel("Journal folder", journal.value, "");
+                    if (!string.IsNullOrEmpty(picked)) journal.value = picked;
+                }) { text = "Browse", tooltip = "Pick the journal folder." };
+                var journalRow = new VisualElement { style = { flexDirection = FlexDirection.Row, marginTop = 12 } };
+                journalRow.Add(journal);
+                journalRow.Add(browseJournal);
+                root.Add(journalRow);
             },
         };
 
