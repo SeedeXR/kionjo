@@ -20,6 +20,7 @@ namespace SeedeXR.Kionjo.EditorTools
         {
             KionjoWindow.Tab.Shoot => "shoot-tab",
             KionjoWindow.Tab.Cut => "cut-tab",
+            KionjoWindow.Tab.Posts => "posts-tab",
             _ => "storyboard-tab",
         });
 
