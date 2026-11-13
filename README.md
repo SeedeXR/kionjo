@@ -86,6 +86,15 @@ the project folder; add it to `.gitignore`):
 - `IKionjoRecordingHook`: start your own device capture together with a take.
 - `IKionjoFrameSink`: take the raw frames somewhere else.
 
+## Posts
+
+Kionjo also turns progress into short vertical posts (Instagram Reels first). Keep a journal entry per step of
+the work (what you are making, the reference, the goal, what you achieved, the hurdle, the trick, your decisions)
+and point it at clips and pictures you already have. The Posts tab (Window > Kionjo > Posts, no storyboard needed)
+builds a 1080x1920 post from it: hook, one sentence on screen at a time, captions, the app's safe zones, a cover
+and ready to paste caption text. Your look lives in a Brand Kit asset (Create > Kionjo > Brand Kit). Kionjo never
+posts anything: you post the file yourself.
+
 ## AI agents
 
 With `com.unity.pipeline` installed, every verb is a CLI command:

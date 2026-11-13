@@ -3,6 +3,25 @@
 All notable changes to Kionjo are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Posts (phase 1): turn a step of the work into a ready to post 1080x1920 Reel, with no storyboard needed.
+  - Journal: one `entry.json` per step in a per-machine folder (Preferences > Kionjo > Journal folder): the six
+    beats, stage (idea, prototype, build, complete), decisions, story type, media by absolute path, hook options.
+  - Brand kit asset (Create > Kionjo > Brand Kit) and Posts settings (output folder, active kit), neutral defaults.
+  - Post builder: hook templates (claim, promise, question, POV), overlays timed by reading speed, the safe zones,
+    crop or blur fill to 9:16, clip sound with silence for clips without sound, optional music ducked under speech,
+    word by word captions, loudness -14 LUFS, a call to action or a loop end.
+  - The bundle: video with text, a no-music version (when music is set), a clean version plus SRT, a cover,
+    caption text, `post.json` and `commands.txt` so the post can be rebuilt.
+  - Warnings from the platform basics (length, no text, long hook, long shots, jargon, other apps' watermarks,
+    footage that is not yours, silence); posts over 3 minutes are refused.
+  - Posts tab in the Kionjo window: journal list with story balance, entry editor, post builder with a preview
+    frame showing the safe zones, live warnings, Build post, Mark as posted, and a grid of the latest covers.
+  - Tools > Kionjo > Build post from journal entry.
+
 ## [0.1.0] - 2026-10-23
 
 ### Added

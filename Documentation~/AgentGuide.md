@@ -82,3 +82,62 @@ After a shoot, in Play mode with the headset unplugged: `kionjo render` (every s
 render, queued one after another), watch `state.json` until `job.running` is false and nothing is
 queued, then `kionjo cut`. The draft folder holds the MP4, the SRT, a Premiere XML timeline and
 `commands.txt`, which re-runs the cut by hand.
+
+## Journal entries
+
+An agent session that did the work can draft the journal entry at the end of it, so the person curates instead of
+writing from scratch. The journal is one folder per machine (Preferences > Kionjo > Journal folder, default
+`<user home>/KionjoJournal`). Each entry is `<journal>/<yyyy-MM-dd>-<slug>/entry.json`, UTF-8, written by
+`JsonUtility` (every field below; unknown fields are ignored). Media are never copied: they are referenced by
+absolute path.
+
+| Field | Meaning |
+|---|---|
+| `id` | 32 hex characters, stable |
+| `created` | `yyyy-MM-dd`; kept in the file, never shown in post text |
+| `project` | Project name |
+| `title` | Working title; the folder slug and the post file names come from it |
+| `story` | One of the brand kit's story types (default list: Origin, Villain, Magic, Prophecy, Alchemy) |
+| `owner` | Brand kit name of whoever posts it |
+| `stage` | `idea`, `prototype`, `build` or `complete` |
+| `making`, `reference`, `goal`, `achieved`, `hurdle`, `trick` | The six beats, plain sentences, each optional. The first sentence of `making`, `achieved`, `hurdle` and `trick` becomes on-screen text |
+| `decisions` | Short sentences, the choices made at this step; each becomes on-screen text after the beats |
+| `media` | List of `{ path, role, inPoint, outPoint, note, notOwn }`. `role` is `hook`, `before`, `after`, `broll`, `still` or `facecam` (`still` items are not put in the video; the `hook` item goes first). `outPoint` at or below `inPoint` means the whole file; a picture holds 3 s unless an out point is set. `notOwn` marks footage someone else made |
+| `hookOptions` | 1 to 4 candidate hook lines of 7 words or fewer; the person picks or rewrites |
+| `status` | `Draft`, `Ready` or `Posted` |
+| `posts` | Posts built from the entry (written by Kionjo) |
+
+Rules for agents: write `Draft` entries only; never set `posted` or `postedUrl` and never mark an entry `Posted`
+(only the person does, after posting in the app themselves); plain words on screen, no jargon and no dates; leave
+`posts` empty.
+
+Example:
+
+```json
+{
+    "id": "3f2a9c1e5b7d4e8f9a0b1c2d3e4f5a6b",
+    "created": "2026-11-08",
+    "project": "My Game",
+    "title": "The ghost never turns round",
+    "story": "Magic",
+    "owner": "My Studio",
+    "stage": "prototype",
+    "making": "A ghost girl who runs ahead of you in the dark.",
+    "reference": "Old stories of spirits that never show their face.",
+    "goal": "She must never turn to look at you.",
+    "achieved": "She runs, stops and waits, and her face stays hidden.",
+    "hurdle": "Her head kept turning toward the camera.",
+    "trick": "We lock the head and turn only the body.",
+    "decisions": ["She stays grey, like everything outside."],
+    "media": [
+        { "path": "D:/Footage/My Game/2026-11-08/ghost-run.mp4", "role": "hook", "inPoint": 1.0, "outPoint": 4.0, "note": "Best first frame", "notOwn": false },
+        { "path": "D:/Footage/My Game/2026-11-08/ghost-wait.mp4", "role": "after", "inPoint": 0.0, "outPoint": 0.0, "note": "", "notOwn": false }
+    ],
+    "hookOptions": ["Can a ghost refuse to turn round?", "POV: she never looks back"],
+    "status": "Draft",
+    "posts": []
+}
+```
+
+Build it from the Posts tab, or with Tools > Kionjo > Build post from journal entry.
+
