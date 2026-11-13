@@ -480,9 +480,11 @@ namespace SeedeXR.Kionjo.EditorTools
             _tabShoot.SetValueWithoutNotify(tab == Tab.Shoot);
             _tabCut.SetValueWithoutNotify(tab == Tab.Cut);
             _tabPosts.SetValueWithoutNotify(tab == Tab.Posts);
-            _tabStoryboard.SetEnabled(has);
-            _tabShoot.SetEnabled(has);
-            _tabCut.SetEnabled(has);
+            // From Posts with no storyboard the trailer tabs stay reachable (they show the empty state).
+            bool reachable = has || tab == Tab.Posts;
+            _tabStoryboard.SetEnabled(reachable);
+            _tabShoot.SetEnabled(reachable);
+            _tabCut.SetEnabled(reachable);
             if (tab == Tab.Cut) _cutTab.Refresh();
             if (tab == Tab.Posts) _postsTab.Refresh();
             if (tab == Tab.Shoot) _shootTab.SetShot(SelectedShot);

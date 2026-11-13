@@ -91,6 +91,9 @@ namespace SeedeXR.Kionjo.EditorTools
                 return;
             }
             Warnings.AddRange(PostWarnings.Check(plan, _entry, _post, _hasKit ? _kit : null));
+            // ponytail: transcription runs on the calling thread (cached per file); move it off when captions become common.
+            if (_post.items.Any(i => i.captionSpeech) && plan.CaptionWords.Count == 0)
+                Warnings.Add("No captions: the speech could not be transcribed (needs Python with faster-whisper, Preferences > Kionjo).");
             string ass = AssWriter.Write(plan.Width, plan.Height, plan.Texts, plan.CaptionWords, _hasKit ? _kit : null);
             var commands = PostCommandBuilder.Build(plan, Folder, _ffmpeg, PostCommandBuilder.Joined);
 
@@ -137,11 +140,13 @@ namespace SeedeXR.Kionjo.EditorTools
             if (File.Exists(srt)) File.Copy(srt, Path.Combine(Folder, plan.Name + ".srt"), true);
             OutputMp4 = Path.Combine(Folder, PostCommandBuilder.MainFile(plan));
             _post.posted = false;
-            _entry.posts ??= new List<KionjoPost>();
-            int at = _entry.posts.FindIndex(x => x.id == _post.id);
-            if (at >= 0) _entry.posts[at] = _post;
-            else _entry.posts.Add(_post);
-            if (!string.IsNullOrEmpty(_entry.Folder)) KionjoJournal.Save(_entry);
+            // Merge into the entry as it is on disk now, so edits made during the build are kept.
+            var target = string.IsNullOrEmpty(_entry.Folder) ? _entry : KionjoJournal.Load(_entry.Folder, out _) ?? _entry;
+            target.posts ??= new List<KionjoPost>();
+            int at = target.posts.FindIndex(x => x.id == _post.id);
+            if (at >= 0) target.posts[at] = _post;
+            else target.posts.Add(_post);
+            if (!string.IsNullOrEmpty(target.Folder)) KionjoJournal.Save(target);
             Progress = 1f;
             Status = $"Done: {PostCommandBuilder.MainFile(plan)}";
             AddLog(Status);

@@ -13,7 +13,8 @@ namespace SeedeXR.Kionjo.EditorTools
     {
         public static string Escape(string text)
         {
-            var s = (text ?? "").Replace("\\", "\\\\").Replace("{", "\\{").Replace("}", "\\}");
+            // libass has no backslash escape: a word joiner (U+2060) after each backslash keeps it literal.
+            var s = (text ?? "").Replace("\\", "\\⁠").Replace("{", "\\{").Replace("}", "\\}");
             return s.Replace("\r\n", "\\N").Replace("\r", "\\N").Replace("\n", "\\N");
         }
 
@@ -49,9 +50,9 @@ namespace SeedeXR.Kionjo.EditorTools
               .Append("Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n");
             // BorderStyle 3 draws a box; libass paints it in OutlineColour (BackColour is its shadow). Outline is the padding.
             sb.Append($"Style: Hook,{titleFont},{I(R(0.045f))},{text},{text},&H66000000,&H66000000,-1,0,0,0,100,100,0,0,3,{I(R(0.008f))},0,5,{I(z.Left)},{I(z.Right)},0,1\n");
-            sb.Append($"Style: Overlay,{bodyFont},{I(R(0.034f))},{text},{text},&H80000000,&H80000000,0,0,0,0,100,100,0,0,3,{I(R(0.006f))},0,2,{I(z.Left)},{I(z.Right)},{I(height - z.TitleBottom)},1\n");
+            sb.Append($"Style: Overlay,{bodyFont},{I(R(0.034f))},{text},{text},&H80000000,&H80000000,0,0,0,0,100,100,0,0,3,{I(R(0.006f))},0,2,{I(z.Left)},{I(z.Right)},{I(z.Bottom)},1\n");
             // \kf fills a word from SecondaryColour to PrimaryColour as it is spoken: spoken words light in the accent.
-            sb.Append($"Style: Caption,{bodyFont},{I(R(0.04f))},{accent},&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,0,2,2,{I(z.Left)},{I(z.Right)},{I(z.Bottom + R(0.02f))},1\n\n");
+            sb.Append($"Style: Caption,{bodyFont},{I(R(0.04f))},{accent},&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,0,2,2,{I(z.Left)},{I(z.Right)},{I(z.Bottom + R(0.12f))},1\n\n");
 
             sb.Append("[Events]\n")
               .Append("Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n");

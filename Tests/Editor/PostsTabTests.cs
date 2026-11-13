@@ -46,6 +46,7 @@ namespace SeedeXR.Kionjo.Tests
             Assert.IsFalse(_w.rootVisualElement.Q("posts-body").ClassListContains("kionjo-hidden"));
             Assert.IsTrue(_w.rootVisualElement.Q("empty-state").ClassListContains("kionjo-hidden"));
             Assert.IsTrue(_w.rootVisualElement.Q("tab-posts").enabledSelf);
+            Assert.IsTrue(_w.rootVisualElement.Q("tab-storyboard").enabledSelf, "the trailer tabs stay reachable from Posts");
             _w.CurrentTab = KionjoWindow.Tab.Storyboard;
             Assert.IsTrue(_w.rootVisualElement.Q("posts-body").ClassListContains("kionjo-hidden"));
             Assert.IsFalse(_w.rootVisualElement.Q("empty-state").ClassListContains("kionjo-hidden"));

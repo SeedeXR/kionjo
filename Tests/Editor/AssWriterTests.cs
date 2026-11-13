@@ -10,7 +10,7 @@ namespace SeedeXR.Kionjo.Tests
         static string[] Dialogues(string ass) => ass.Split('\n').Where(l => l.StartsWith("Dialogue:")).ToArray();
 
         [Test]
-        public void Escape_BracesBackslashNewline() => Assert.AreEqual("a\\{b\\}\\\\c\\Nd", AssWriter.Escape("a{b}\\c\nd"));
+        public void Escape_BracesBackslashNewline() => Assert.AreEqual("a\\{b\\}\\⁠c\\Nd", AssWriter.Escape("a{b}\\c\nd"));
 
         [Test]
         public void Time_Centiseconds()
@@ -62,9 +62,9 @@ namespace SeedeXR.Kionjo.Tests
             StringAssert.Contains("Style: Hook,Arial,86,", ass);
             StringAssert.Contains("Style: Overlay,Arial,65,", ass);
             StringAssert.Contains("Style: Caption,Arial,77,", ass);
-            // overlay sits on the title band's bottom edge, captions above the bottom zone
-            StringAssert.Contains(",2,65,150,420,1\n", ass);
-            StringAssert.Contains(",2,65,150,708,1\n", ass);
+            // overlays end where the bottom zone starts (y 1250); captions sit above them
+            StringAssert.Contains(",2,65,150,670,1\n", ass);
+            StringAssert.Contains(",2,65,150,900,1\n", ass);
         }
     }
 }

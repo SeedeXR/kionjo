@@ -55,6 +55,7 @@ namespace SeedeXR.Kionjo.EditorTools
     {
         public const string FolderKey = "SeedeXR.Kionjo.JournalFolder";
         public const string FileName = "entry.json";
+        static readonly object SaveLock = new();
         public static readonly string[] Stages = { "idea", "prototype", "build", "complete" };
 
         public static string Folder
@@ -107,10 +108,14 @@ namespace SeedeXR.Kionjo.EditorTools
             if (string.IsNullOrEmpty(e?.Folder)) throw new ArgumentException("The entry has no folder.");
             Directory.CreateDirectory(e.Folder);
             var target = Path.Combine(e.Folder, FileName);
-            var partial = target + ".partial";
-            File.WriteAllText(partial, JsonUtility.ToJson(e, true), new UTF8Encoding(false));
-            if (File.Exists(target)) File.Replace(partial, target, null);
-            else File.Move(partial, target);
+            // A post job saves from a worker thread while the window may save too: one writer at a time.
+            lock (SaveLock)
+            {
+                var partial = target + ".partial";
+                File.WriteAllText(partial, JsonUtility.ToJson(e, true), new UTF8Encoding(false));
+                if (File.Exists(target)) File.Replace(partial, target, null);
+                else File.Move(partial, target);
+            }
         }
 
         /// <summary>The entry in folder, or null with the reason in error.</summary>

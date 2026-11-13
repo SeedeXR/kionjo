@@ -217,7 +217,9 @@ namespace SeedeXR.Kionjo.EditorTools
 
         void Changed(bool warnings = true)
         {
-            if (_e.posts.Contains(_post)) KionjoJournal.Save(_e);
+            // A new post joins the entry on its first edit, so a rebind never throws the draft away.
+            if (!_e.posts.Contains(_post)) _e.posts.Add(_post);
+            if (!string.IsNullOrEmpty(_e.Folder)) KionjoJournal.Save(_e);
             if (warnings) RefreshWarnings();
         }
 

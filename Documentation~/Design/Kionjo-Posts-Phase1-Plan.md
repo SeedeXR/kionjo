@@ -32,6 +32,7 @@
 
 - `JournalEntry` gains `string stage` (one of `idea, prototype, build, complete`; default `idea`) and `List<string> decisions` (short sentences, the choices made at this step). Both round-trip in Task 1 (`SaveLoad_RoundTrip_AllFields` covers them; `Create` sets `stage = "idea"`).
 - `KionjoPost.FromEntry` appends each non-empty decision (first sentence) to `overlays` after the beats, so decisions become on-screen text the same way the beats do (Task 3 test `FromEntry_DecisionsFollowBeats`).
+- Corrections found in the branch review (libass checked by rendering): `AssWriter.Escape` puts a word joiner (U+2060) after each backslash instead of doubling it (libass has no `\\` escape); the Overlay style's MarginV is `zone.Bottom` (overlays end at y 1250, outside the bottom zone; the earlier `height - zone.TitleBottom` put them inside it) and the Caption style's MarginV is `zone.Bottom + round(height * 0.12)`, above the overlays.
 - Execution order chosen by the maintainer: Tasks 1 to 9, then a thin Editor menu item "Tools/Kionjo/Build post from journal entry" (picks an `entry.json`, runs the Task 9 `PostJob` through `KionjoJobs`), then Task 12 acceptance with the AI Curator entry (idea to prototype; the Ghost girl is the second post), then Tasks 10 and 11, then the whole-branch review. No other scope change.
 
 ## Evaluation plan (every checkpoint)
