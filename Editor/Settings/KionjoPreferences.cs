@@ -33,6 +33,42 @@ namespace SeedeXR.Kionjo.EditorTools
             set => EditorPrefs.SetBool(OpenFolderKey, value);
         }
 
+        public const string FootageRootKey = "SeedeXR.Kionjo.FootageRoot";
+        public const string WatchProgressKey = "SeedeXR.Kionjo.WatchProgress";
+        public const string FloorKey = "SeedeXR.Kionjo.FloorGB";
+        public const string LockFolderKey = "SeedeXR.Kionjo.LockFolder";
+
+        /// <summary>Folder of footage day folders (yyyy-MM-dd) the watcher reads; empty = off.</summary>
+        public static string FootageRoot
+        {
+            get => EditorPrefs.GetString(FootageRootKey, "");
+            set => EditorPrefs.SetString(FootageRootKey, value ?? "");
+        }
+
+        public static bool WatchProgress
+        {
+            get => EditorPrefs.GetBool(WatchProgressKey, true);
+            set => EditorPrefs.SetBool(WatchProgressKey, value);
+        }
+
+        /// <summary>Free memory (GB) that must stay free after a heavy job.</summary>
+        public static float FloorGB
+        {
+            get => EditorPrefs.GetFloat(FloorKey, 8f);
+            set => EditorPrefs.SetFloat(FloorKey, Mathf.Max(0f, value));
+        }
+
+        /// <summary>Where the machine-wide heavy-work lock lives (shared by every tool that honours it).</summary>
+        public static string LockFolder
+        {
+            get => EditorPrefs.GetString(LockFolderKey, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".kionjo"));
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value)) EditorPrefs.DeleteKey(LockFolderKey);
+                else EditorPrefs.SetString(LockFolderKey, value);
+            }
+        }
+
         /// <summary>The user's encoder arguments when set (for example "-c:v h264_nvenc -cq 19"), else the preset's.</summary>
         public static string[] EncoderArgs(string[] presetArgs)
         {
@@ -101,6 +137,30 @@ namespace SeedeXR.Kionjo.EditorTools
                 journalRow.Add(journal);
                 journalRow.Add(browseJournal);
                 root.Add(journalRow);
+
+                var progress = new Label("Progress") { style = { unityFontStyleAndWeight = FontStyle.Bold, marginTop = 12 } };
+                root.Add(progress);
+                var watch = new Toggle("Watch for progress") { value = WatchProgress, tooltip = "While the editor is open, notice changed journal entries and new footage, and refresh each step's materials and brief. Never renders." };
+                watch.RegisterValueChangedCallback(e =>
+                {
+                    WatchProgress = e.newValue;
+                    KionjoWatcher.Restart();
+                });
+                root.Add(watch);
+                var footage = new TextField("Footage folder") { value = FootageRoot, isDelayed = true, tooltip = "Holds one folder per day (yyyy-MM-dd) with the clips and a notes.md line per file. Captures go here. Empty: watching footage is off." };
+                footage.RegisterValueChangedCallback(e =>
+                {
+                    FootageRoot = e.newValue;
+                    KionjoWatcher.Restart();
+                });
+                root.Add(footage);
+                var floor = new FloatField("Keep free (GB)") { value = FloorGB, tooltip = "A capture or render waits in the backlog unless free memory is twice its need and this much stays free after it." };
+                floor.RegisterValueChangedCallback(e => FloorGB = e.newValue);
+                root.Add(floor);
+                var lockFolder = new TextField("Heavy-work lock folder") { value = LockFolder, isDelayed = true, tooltip = "One machine-wide lock file for heavy jobs, so tools and agents take turns." };
+                lockFolder.RegisterValueChangedCallback(e => LockFolder = e.newValue);
+                root.Add(lockFolder);
+                root.Add(new Label($"Lock: {HeavyLock.Describe(LockFolder)}") { style = { whiteSpace = WhiteSpace.Normal } });
             },
         };
 
