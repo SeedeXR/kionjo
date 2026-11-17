@@ -74,6 +74,33 @@ namespace SeedeXR.Kionjo.Tests
             Assert.AreEqual("dropped", back.captures[0].state);
         }
 
+        /// <summary>A feature or label with : / * must not break the file name after the lock is taken.</summary>
+        [Test]
+        public void BaseNameIsSafeForFiles()
+        {
+            var baseName = typeof(KionjoCapture).GetMethod("BaseName", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            Assert.IsNotNull(baseName, "no safe base name");
+            var e = new JournalEntry { title = "Hero", feature = "hero:act/1*" };
+            var name = (string)baseName.Invoke(null, new object[] { e, new KionjoCaptureRequest { label = "v 3: final?" } });
+            Assert.AreEqual(-1, name.IndexOfAny(Path.GetInvalidFileNameChars()), name);
+            Assert.AreEqual(-1, name.IndexOfAny(new[] { ':', '/', '\\', '*', '?' }), name);
+        }
+
+        /// <summary>A request file has no id: running it again continues the pending item, and the result says which.</summary>
+        [Test]
+        public void RetryContinuesThePendingItem()
+        {
+            var e = Entry("Hero", 17);
+            KionjoCapture.FreeMemory = () => (7.0, 7.0);
+            var file = Path.Combine(_dir, "request.json");
+            File.WriteAllText(file, "{\"entry\":\"" + e.Folder.Replace("\\", "/") + "\",\"label\":\"v3\",\"seconds\":1,\"rigs\":[\"main\"]}");
+            KionjoCapture.RunFile(file);
+            KionjoCapture.RunFile(file);
+            var back = KionjoJournal.Load(e.Folder, out _);
+            Assert.AreEqual(1, back.captures.Count);
+            StringAssert.Contains("\"id\": \"" + back.captures[0].id + "\"", File.ReadAllText(file + ".result.json"));
+        }
+
         [Test]
         public void PendingWhenNoRoom()
         {

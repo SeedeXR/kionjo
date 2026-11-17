@@ -219,7 +219,7 @@ namespace SeedeXR.Kionjo.EditorTools
         {
             // A new post joins the entry on its first edit, so a rebind never throws the draft away.
             if (!_e.posts.Contains(_post)) _e.posts.Add(_post);
-            if (!string.IsNullOrEmpty(_e.Folder)) KionjoJournal.Save(_e);
+            if (!string.IsNullOrEmpty(_e.Folder)) KionjoJournal.SaveEdited(_e);
             if (warnings) RefreshWarnings();
         }
 
@@ -263,7 +263,7 @@ namespace SeedeXR.Kionjo.EditorTools
                 return;
             }
             if (!_e.posts.Contains(_post)) _e.posts.Add(_post);
-            KionjoJournal.Save(_e);
+            KionjoJournal.SaveEdited(_e);
             _lastJob = new PostJob(_e, _post, _kit, KionjoPaths.PostsRoot(KionjoPostsSettings.instance.outputFolder), ffmpeg, _info, path => WordTimer.Words(path, out _));
             KionjoJobs.Enqueue(_lastJob);
             RefreshBuildState();
@@ -296,7 +296,7 @@ namespace SeedeXR.Kionjo.EditorTools
                 _post.posted = true;
                 _post.postedUrl = url.value;
                 _e.status = "Posted";
-                KionjoJournal.Save(_e);
+                KionjoJournal.SaveEdited(_e);
                 RefreshAfter();
             }) { name = "post-mark-posted", text = _post.posted ? "Posted" : "Mark as posted", tooltip = "Records that you posted it yourself in the app. Kionjo never posts." });
             _after.Add(row);

@@ -29,6 +29,10 @@ namespace SeedeXR.Kionjo.EditorTools
         /// <summary>Called from file system events (any thread).</summary>
         public void Seen(string path)
         {
+            // Kionjo's own files in flight (the capture's .partial.mp4, the mux's .sound.mp4) are renamed when done;
+            // the final name raises its own event. A stalled writer could otherwise look settled and get attached.
+            var name = Path.GetFileName(path ?? "");
+            if (name.Contains(".partial.") || name.Contains(".sound.")) return;
             lock (_lock)
                 if (!_seen.ContainsKey(path)) _seen[path] = (_size(path), _now());
         }

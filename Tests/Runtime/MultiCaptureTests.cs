@@ -101,5 +101,40 @@ namespace SeedeXR.Kionjo.Tests
             Assert.Greater(result.minDistanceOverSize, 1f, "a rig camera stood inside the subject");
             Assert.IsFalse(Directory.GetFiles(_dir).Any(f => f.EndsWith(".partial.mp4")));
         }
+
+        /// <summary>A capture whose object goes away (a scene load) must still report, or Play mode and the lock never end.</summary>
+        [UnityTest]
+        public IEnumerator DestroyedCaptureStillReportsDone()
+        {
+            var ffmpeg = FrameCaptureTests.FindExe("ffmpeg");
+            if (ffmpeg == null) Assert.Ignore("ffmpeg is not on PATH");
+            _root = new GameObject("Capture Scene");
+            var cam = new GameObject("Main Camera").AddComponent<Camera>();
+            cam.transform.SetParent(_root.transform);
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.transform.SetParent(_root.transform);
+            var capture = new GameObject("Capture").AddComponent<KionjoMultiCapture>();
+            capture.subject = cube.transform;
+            capture.main = cam;
+            capture.rigs = new[] { "main", "close" };
+            capture.seconds = 5f;
+            capture.fps = 30f;
+            capture.stillsEvery = 0f;
+            capture.outFolder = _dir;
+            capture.baseName = "gone";
+            capture.ffmpeg = ffmpeg;
+            capture.encoderArgs = new[] { "-c:v", "libx264", "-preset", "ultrafast" };
+            KionjoMultiCaptureResult result = null;
+            capture.Done += r => result = r;
+            capture.Begin();
+            yield return null;
+            yield return null;
+            Object.Destroy(capture.gameObject);
+            for (int i = 0; i < 60 && result == null; i++) yield return null;
+
+            Assert.IsNotNull(result, "Done never fired");
+            Assert.IsFalse(result.ok);
+            StringAssert.Contains("stopped", result.error);
+        }
     }
 }

@@ -50,6 +50,36 @@ namespace SeedeXR.Kionjo.Tests
         }
 
         [Test]
+        public void SameDayAndTitleGetTheirOwnFolders()
+        {
+            var a = Entry();
+            var b = Entry();
+            Assert.AreNotEqual(PostFolder.EntryFolder(_posts, a), PostFolder.EntryFolder(_posts, b));
+            Assert.AreEqual(Path.Combine(_posts, "2026-11-17_hero-rises-2"), PostFolder.EntryFolder(_posts, b));
+        }
+
+        [Test]
+        public void OtherPostsStaySideBySideInTheLatestVersion()
+        {
+            var e = Entry();
+            var entry = PostFolder.EntryFolder(_posts, e);
+            var v1 = PostFolder.Next(entry);
+            Directory.CreateDirectory(Path.Combine(v1, "post"));
+            Directory.CreateDirectory(Path.Combine(v1, "capcut"));
+            File.WriteAllBytes(Path.Combine(v1, "post", "teaser.mp4"), new byte[7]);
+            File.WriteAllBytes(Path.Combine(v1, "capcut", "teaser_clean.mp4"), new byte[7]);
+            File.WriteAllBytes(Path.Combine(v1, "post", "reel.mp4"), new byte[3]);
+            var v2 = PostFolder.Next(entry);
+            Directory.CreateDirectory(Path.Combine(v2, "post"));
+            File.WriteAllBytes(Path.Combine(v2, "post", "reel.mp4"), new byte[5]);
+            PostFolder.PruneOlderVideos(entry, v2);
+            Assert.IsTrue(File.Exists(Path.Combine(v2, "post", "teaser.mp4")), "the other post was deleted");
+            Assert.IsTrue(File.Exists(Path.Combine(v2, "capcut", "teaser_clean.mp4")));
+            Assert.AreEqual(5, new FileInfo(Path.Combine(v2, "post", "reel.mp4")).Length, "the rebuilt post was replaced by the old one");
+            Assert.IsFalse(File.Exists(Path.Combine(v1, "post", "reel.mp4")));
+        }
+
+        [Test]
         public void NextCountsUp()
         {
             var entry = PostFolder.EntryFolder(_posts, Entry());

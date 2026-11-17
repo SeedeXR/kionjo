@@ -62,6 +62,21 @@ namespace SeedeXR.Kionjo.Tests
             Assert.IsFalse(string.IsNullOrEmpty(note));
         }
 
+        /// <summary>A refresh must not re-copy an unchanged copy (gigabytes from another drive, on the main thread).</summary>
+        [Test]
+        public void UnchangedCopyIsNotCopiedAgain()
+        {
+            KionjoLinks.TryLink = (a, b) => false;
+            KionjoLinks.LinkOrCopy(_src, Dest, out _);
+            // Held open without delete sharing: a second copy would have to delete it and fail.
+            using (new FileStream(Dest, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                KionjoLinks.LinkOrCopy(_src, Dest, out var note);
+                Assert.IsFalse(note != null && note.StartsWith("Could not"), note);
+            }
+            CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, File.ReadAllBytes(Dest));
+        }
+
         [Test]
         public void OverwritesExisting()
         {

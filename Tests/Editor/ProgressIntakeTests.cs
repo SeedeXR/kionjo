@@ -66,6 +66,21 @@ namespace SeedeXR.Kionjo.Tests
             Assert.AreEqual(0, intake.Ready().Count);
         }
 
+        /// <summary>Kionjo's own in-flight files are renamed when done; a stalled one must never be attached.</summary>
+        [Test]
+        public void InFlightFilesAreIgnored()
+        {
+            var intake = Intake();
+            _sizes["hero-v1-main.partial.mp4"] = 10;
+            _sizes["hero-v1-main.sound.mp4"] = 10;
+            intake.Seen("hero-v1-main.partial.mp4");
+            intake.Seen("hero-v1-main.sound.mp4");
+            _now = _now.AddSeconds(10);
+            CollectionAssert.IsEmpty(intake.Ready());
+            _now = _now.AddSeconds(10);
+            CollectionAssert.IsEmpty(intake.Ready());
+        }
+
         [Test]
         public void EmptyFileIsNotReady()
         {

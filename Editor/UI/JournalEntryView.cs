@@ -59,7 +59,7 @@ namespace SeedeXR.Kionjo.EditorTools
 
         void Save(bool rebind = false)
         {
-            KionjoJournal.Save(_e);
+            KionjoJournal.SaveEdited(_e);
             if (rebind) Bind(_e, _kit);
             Changed?.Invoke();
         }

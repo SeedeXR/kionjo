@@ -17,8 +17,19 @@ namespace SeedeXR.Kionjo.EditorTools
         public static readonly string[] VideoExtensions = { ".mp4", ".mov", ".webm", ".mkv" };
         static readonly Regex Version = new(@"^v(\d+)$");
 
-        public static string EntryFolder(string postsRoot, JournalEntry e) =>
-            Path.Combine(postsRoot, $"{e.created}_{KionjoJournal.Slug(e.title)}");
+        /// <summary>
+        /// &lt;created&gt;_&lt;slug&gt;, taken from the entry's journal folder name (2026-11-17-hero-2 gives
+        /// 2026-11-17_hero-2), so two entries with the same day and title never share a post folder.
+        /// </summary>
+        public static string EntryFolder(string postsRoot, JournalEntry e)
+        {
+            var name = string.IsNullOrEmpty(e.Folder) ? "" : Path.GetFileName(e.Folder.TrimEnd('/', '\\'));
+            var created = e.created ?? "";
+            var slug = created.Length > 0 && name.StartsWith(created + "-") && name.Length > created.Length + 1
+                ? name.Substring(created.Length + 1)
+                : KionjoJournal.Slug(e.title);
+            return Path.Combine(postsRoot, $"{created}_{slug}");
+        }
 
         static IEnumerable<(string dir, int n)> Versions(string entryFolder) =>
             !Directory.Exists(entryFolder) ? Enumerable.Empty<(string, int)>()
@@ -75,15 +86,29 @@ namespace SeedeXR.Kionjo.EditorTools
 
         /// <summary>
         /// Deletes the videos in every vNN of the entry other than keepVersionFolder (pictures, briefs and
-        /// recipes stay). Returns the bytes freed by files that were not materials links.
+        /// recipes stay). Other posts' outputs (a name keepVersionFolder's post/ or capcut/ does not have) are
+        /// first linked into it, so different posts of one step sit side by side in the latest version.
+        /// Returns the bytes freed by files that were not materials links.
         /// </summary>
         public static long PruneOlderVideos(string entryFolder, string keepVersionFolder)
         {
             long freed = 0;
             var keep = Path.GetFullPath(keepVersionFolder ?? "").TrimEnd('/', '\\');
-            foreach (var (dir, _) in Versions(entryFolder).ToList())
+            var older = Versions(entryFolder).Where(v => !string.Equals(Path.GetFullPath(v.dir).TrimEnd('/', '\\'), keep, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(v => v.n).ToList();
+            foreach (var (dir, _) in older)
+                foreach (var sub in new[] { Post, CapCut })
+                {
+                    var from = Path.Combine(dir, sub);
+                    if (!Directory.Exists(from)) continue;
+                    foreach (var f in Directory.GetFiles(from))
+                    {
+                        var to = Path.Combine(keep, sub, Path.GetFileName(f));
+                        if (!File.Exists(to)) KionjoLinks.LinkOrCopy(f, to, out _);
+                    }
+                }
+            foreach (var (dir, _) in older)
             {
-                if (string.Equals(Path.GetFullPath(dir).TrimEnd('/', '\\'), keep, StringComparison.OrdinalIgnoreCase)) continue;
                 var materials = Path.GetFullPath(Path.Combine(dir, Materials));
                 foreach (var f in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
                 {

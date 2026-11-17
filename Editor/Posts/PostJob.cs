@@ -143,13 +143,16 @@ namespace SeedeXR.Kionjo.EditorTools
             OutputMp4 = Path.Combine(Folder, PostFolder.Post, PostCommandBuilder.MainFile(plan));
             PostFolder.PruneOlderVideos(Path.GetDirectoryName(Folder), Folder);
             _post.posted = false;
-            // Merge into the entry as it is on disk now, so edits made during the build are kept.
-            var target = string.IsNullOrEmpty(_entry.Folder) ? _entry : KionjoJournal.Load(_entry.Folder, out _) ?? _entry;
-            target.posts ??= new List<KionjoPost>();
-            int at = target.posts.FindIndex(x => x.id == _post.id);
-            if (at >= 0) target.posts[at] = _post;
-            else target.posts.Add(_post);
-            if (!string.IsNullOrEmpty(target.Folder)) KionjoJournal.Save(target);
+            // Merge into the entry as it is on disk now, under the journal's lock, so edits and media attached
+            // during the build (the watcher, an agent, the window) are kept.
+            void Upsert(JournalEntry target)
+            {
+                target.posts ??= new List<KionjoPost>();
+                int at = target.posts.FindIndex(x => x.id == _post.id);
+                if (at >= 0) target.posts[at] = _post;
+                else target.posts.Add(_post);
+            }
+            if (KionjoJournal.Update(_entry.Folder, Upsert) == null) Upsert(_entry);
             Progress = 1f;
             Status = $"Done: {PostCommandBuilder.MainFile(plan)}";
             AddLog(Status);

@@ -73,6 +73,17 @@ namespace SeedeXR.Kionjo.Tests
             StringAssert.Contains("capture", HeavyLock.Describe(_dir));
         }
 
+        /// <summary>After a restart the old pid belongs to a newer process: the lock is stale, not held forever.</summary>
+        [Test]
+        public void ReusedPidIsStale()
+        {
+            Directory.CreateDirectory(_dir);
+            int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+            File.WriteAllText(Path.Combine(_dir, "heavy.lock"), "{\"owner\":\"before the restart\",\"pid\":" + pid + ",\"gb\":4,\"since\":\"2000-01-01T00:00:00\"}");
+            using var mine = HeavyLock.TryAcquire(_dir, "capture", 3, out var holder);
+            Assert.IsNotNull(mine, holder);
+        }
+
         [Test]
         public void DisposeReleases()
         {

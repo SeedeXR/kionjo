@@ -159,13 +159,35 @@ namespace SeedeXR.Kionjo
             if (_result.audioWav != null)
             {
                 foreach (var v in _result.videos)
-                    if (!Mux(v, _result.audioWav, out var err)) _result.warnings.Add($"{Path.GetFileName(v)} kept silent: {err}");
-                File.Delete(_result.audioWav);
+                {
+                    string err;
+                    try
+                    {
+                        if (Mux(v, _result.audioWav, out err)) continue;
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+                    {
+                        err = ex.Message;
+                    }
+                    _result.warnings.Add($"{Path.GetFileName(v)} kept silent: {err}");
+                }
+                try { File.Delete(_result.audioWav); }
+                catch (IOException) { }
                 _result.audioWav = null;
             }
             _result.ok = _result.error == null && _result.videos.Count == _rigs.Count;
             foreach (var r in _rigs)
                 if (r.cam != null) Destroy(r.cam.gameObject);
+            Raise();
+        }
+
+        bool _raised;
+
+        /// <summary>Done fires exactly once, whether the capture finished or was stopped.</summary>
+        void Raise()
+        {
+            if (_raised) return;
+            _raised = true;
             Done?.Invoke(_result);
         }
 
@@ -201,6 +223,10 @@ namespace SeedeXR.Kionjo
             _audio?.Stop(null, out _);
             foreach (var r in _rigs)
                 if (r.capture != null) r.capture.Abort();
+            // Whoever waits on Done (the capture runner, which exits Play mode and releases the lock) must hear of it.
+            _result.ok = false;
+            _result.error ??= "The capture was stopped before it finished (its object was destroyed).";
+            Raise();
         }
     }
 }

@@ -49,7 +49,7 @@ namespace SeedeXR.Kionjo.EditorTools
         [Serializable]
         class ResultFile
         {
-            public string state, reason;
+            public string id, state, reason;
             public List<string> outputs = new();
             public int pid;
         }
@@ -69,10 +69,11 @@ namespace SeedeXR.Kionjo.EditorTools
         /// edit mode (dropped, pending, failed); a capture ends after Play mode, in the entry (and the
         /// result file of a batch run), and calls done only when no domain reload happened in between.
         /// </summary>
-        public static void Run(string entryFolder, KionjoCaptureRequest r, Action<KionjoCaptureRequest> done) => Run(entryFolder, r, done, null);
+        public static void Run(string entryFolder, KionjoCaptureRequest r, Action<KionjoCaptureRequest> done) => Run(entryFolder, r, done, null, false);
 
-        static void Run(string entryFolder, KionjoCaptureRequest r, Action<KionjoCaptureRequest> done, string resultPath)
+        static void Run(string entryFolder, KionjoCaptureRequest r, Action<KionjoCaptureRequest> done, string resultPath, bool exitWhenDone)
         {
+            var requestedId = r.id;
             if (string.IsNullOrEmpty(r.id)) r.id = Guid.NewGuid().ToString("N").Substring(0, 8);
             if (r.rigs == null || r.rigs.Count == 0) r.rigs = KionjoRigs.All.ToList();
             void End(string state, string reason)
@@ -82,7 +83,7 @@ namespace SeedeXR.Kionjo.EditorTools
                 Record(entryFolder, r, null);
                 WriteResult(resultPath, r);
                 done?.Invoke(r);
-                if (Application.isBatchMode && resultPath != null) EditorApplication.Exit(state == KionjoCaptureRequest.States.Taken ? 0 : 1);
+                if (exitWhenDone) EditorApplication.Exit(state == KionjoCaptureRequest.States.Taken ? 0 : 1);
             }
 
             var entry = KionjoJournal.Load(entryFolder ?? "", out var error);
@@ -92,8 +93,15 @@ namespace SeedeXR.Kionjo.EditorTools
                 r.reason = error ?? "No journal entry.";
                 WriteResult(resultPath, r);
                 done?.Invoke(r);
-                if (Application.isBatchMode && resultPath != null) EditorApplication.Exit(1);
+                if (exitWhenDone) EditorApplication.Exit(1);
                 return;
+            }
+            if (string.IsNullOrEmpty(requestedId))
+            {
+                // A retried request (no id in the file) continues the pending item it left, instead of adding a second one.
+                var waiting = entry.captures.FirstOrDefault(c => c.state == KionjoCaptureRequest.States.Pending
+                    && string.Equals(c.label ?? "", r.label ?? "") && string.Equals(c.scene ?? "", r.scene ?? ""));
+                if (waiting != null) r.id = waiting.id;
             }
             var all = KionjoJournal.LoadAll(Path.GetDirectoryName(entry.Folder), null);
             var self = all.FirstOrDefault(e => e.Folder == entry.Folder) ?? entry;
@@ -117,39 +125,81 @@ namespace SeedeXR.Kionjo.EditorTools
                 return;
             }
 
-            string fail = Prepare(r, out var subject, out var cam, out var ffmpeg);
-            if (fail != null)
+            // From here on the lock is held: every way out releases it, records the request and (batch) exits.
+            try
             {
-                heavy.Dispose();
-                End(KionjoCaptureRequest.States.Failed, fail);
-                return;
-            }
+                string fail = Prepare(r, out var subject, out var cam, out var ffmpeg);
+                if (fail != null)
+                {
+                    heavy.Dispose();
+                    End(KionjoCaptureRequest.States.Failed, fail);
+                    return;
+                }
 
-            ReadVersion(r);
-            var root = FootageRoot();
-            if (string.IsNullOrWhiteSpace(root)) root = Path.Combine(KionjoPaths.Root(KionjoPostsSettings.instance.outputFolder), "captures");
-            var day = FootageNotes.DayFolder(root, DateTime.Today);
-            var pending = new Pending
+                ReadVersion(r);
+                var root = FootageRoot();
+                if (string.IsNullOrWhiteSpace(root)) root = Path.Combine(KionjoPaths.Root(KionjoPostsSettings.instance.outputFolder), "captures");
+                var day = FootageNotes.DayFolder(root, DateTime.Today);
+                var pending = new Pending
+                {
+                    entryFolder = entry.Folder,
+                    subjectPath = PathOf(subject.transform),
+                    cameraPath = PathOf(cam.transform),
+                    outFolder = day,
+                    baseName = FreeBaseName(day, BaseName(entry, r)),
+                    resultPath = resultPath,
+                    lockFolder = lockFolder,
+                    ffmpeg = ffmpeg,
+                    encoderArgs = KionjoPreferences.EncoderArgs(DefaultEncoder),
+                    batch = exitWhenDone,
+                    request = r,
+                };
+                // Not disposed here: the lock outlives the domain reload as a file owned by this process; Finish releases it.
+                r.reason = "Capturing";
+                Record(entry.Folder, r, null);
+                _done = done;
+                SessionState.SetString(StateKey, JsonUtility.ToJson(pending));
+                SessionState.EraseString(ResultKey);
+                EditorApplication.EnterPlaymode();
+                WatchPlayStart();
+            }
+            catch (Exception ex)
             {
-                entryFolder = entry.Folder,
-                subjectPath = PathOf(subject.transform),
-                cameraPath = PathOf(cam.transform),
-                outFolder = day,
-                baseName = FreeBaseName(day, $"{(string.IsNullOrWhiteSpace(entry.feature) ? KionjoJournal.Slug(entry.title) : entry.feature)}-{(string.IsNullOrWhiteSpace(r.label) ? "take" : r.label)}"),
-                resultPath = resultPath,
-                lockFolder = lockFolder,
-                ffmpeg = ffmpeg,
-                encoderArgs = KionjoPreferences.EncoderArgs(DefaultEncoder),
-                batch = Application.isBatchMode,
-                request = r,
-            };
-            // Not disposed here: the lock outlives the domain reload as a file owned by this process; Finish releases it.
-            r.reason = "Capturing";
-            Record(entry.Folder, r, null);
-            _done = done;
-            SessionState.SetString(StateKey, JsonUtility.ToJson(pending));
-            SessionState.EraseString(ResultKey);
-            EditorApplication.EnterPlaymode();
+                SessionState.EraseString(StateKey);
+                heavy.Dispose();
+                End(KionjoCaptureRequest.States.Failed, $"The capture could not start: {ex.Message}");
+            }
+        }
+
+        /// <summary>The footage base name, made safe for any file system: feature (or title) and label, slugged.</summary>
+        internal static string BaseName(JournalEntry entry, KionjoCaptureRequest r)
+        {
+            var feature = KionjoJournal.Slug(string.IsNullOrWhiteSpace(entry.feature) ? entry.title : entry.feature);
+            var label = string.IsNullOrWhiteSpace(r.label) ? "take" : KionjoJournal.Slug(r.label);
+            return $"{feature}-{label}";
+        }
+
+        /// <summary>
+        /// Play mode can be refused (compile errors, another tool): then no domain reload comes, the capture
+        /// would stay armed for the next manual Play session and keep the lock. Give up after a few seconds.
+        /// </summary>
+        static void WatchPlayStart()
+        {
+            double until = EditorApplication.timeSinceStartup + 10.0;
+            void Check()
+            {
+                if (EditorApplication.isPlayingOrWillChangePlaymode || SessionState.GetString(StateKey, "").Length == 0)
+                {
+                    EditorApplication.update -= Check;
+                    return;
+                }
+                if (EditorApplication.timeSinceStartup < until) return;
+                EditorApplication.update -= Check;
+                var json = SessionState.GetString(StateKey, "");
+                Store(new KionjoMultiCaptureResult { error = "Play mode did not start (compile errors?)." });
+                Finish(JsonUtility.FromJson<Pending>(json));
+            }
+            EditorApplication.update += Check;
         }
 
         /// <summary>Opens the scene and finds the camera, the subject and ffmpeg; the reason when one is missing.</summary>
@@ -250,7 +300,7 @@ namespace SeedeXR.Kionjo.EditorTools
         static void WriteResult(string resultPath, KionjoCaptureRequest r)
         {
             if (string.IsNullOrEmpty(resultPath)) return;
-            var result = new ResultFile { state = r.state, reason = r.reason, outputs = r.outputs ?? new List<string>(), pid = Process.GetCurrentProcess().Id };
+            var result = new ResultFile { id = r.id, state = r.state, reason = r.reason, outputs = r.outputs ?? new List<string>(), pid = Process.GetCurrentProcess().Id };
             File.WriteAllText(resultPath, JsonUtility.ToJson(result, true), new UTF8Encoding(false));
         }
 
@@ -313,31 +363,45 @@ namespace SeedeXR.Kionjo.EditorTools
             SessionState.EraseString(ResultKey);
             var result = json.Length > 0 ? JsonUtility.FromJson<KionjoMultiCaptureResult>(json) : new KionjoMultiCaptureResult { error = "Play mode ended before the capture finished." };
             var r = p.request;
-            var media = new List<JournalMedia>();
-            r.outputs = new List<string>();
-            foreach (var video in result.videos)
+            // Whatever throws below (a locked notes.md, a full disk), the lock is released, the result file
+            // written and a batch editor exits: a capture never leaves an editor or a lock behind.
+            try
             {
-                var rig = Path.GetFileNameWithoutExtension(video).Substring(p.baseName.Length + 1);
-                FootageNotes.Append(p.outFolder, Path.GetFileName(video),
-                    string.Format(CultureInfo.InvariantCulture, "{0} angle of {1}, {2:0.#} s, frame-locked with the other angles", rig, string.IsNullOrWhiteSpace(r.label) ? p.baseName : r.label, r.seconds));
-                media.Add(new JournalMedia { path = video, role = rig == "main" ? "hook" : "broll", note = $"{rig} angle, captured by Kionjo" });
-                r.outputs.Add(video);
+                var media = new List<JournalMedia>();
+                r.outputs = new List<string>();
+                foreach (var video in result.videos)
+                {
+                    var rig = Path.GetFileNameWithoutExtension(video).Substring(p.baseName.Length + 1);
+                    FootageNotes.Append(p.outFolder, Path.GetFileName(video),
+                        string.Format(CultureInfo.InvariantCulture, "{0} angle of {1}, {2:0.#} s, frame-locked with the other angles", rig, string.IsNullOrWhiteSpace(r.label) ? p.baseName : r.label, r.seconds));
+                    media.Add(new JournalMedia { path = video, role = rig == "main" ? "hook" : "broll", note = $"{rig} angle, captured by Kionjo" });
+                    r.outputs.Add(video);
+                }
+                foreach (var still in result.stills)
+                {
+                    media.Add(new JournalMedia { path = still, role = "still" });
+                    r.outputs.Add(still);
+                }
+                r.state = result.ok ? KionjoCaptureRequest.States.Taken : KionjoCaptureRequest.States.Failed;
+                r.reason = result.ok ? (result.warnings.Count > 0 ? string.Join(" ", result.warnings) : null) : result.error;
+                Record(p.entryFolder, r, media);
             }
-            foreach (var still in result.stills)
+            catch (Exception ex)
             {
-                media.Add(new JournalMedia { path = still, role = "still" });
-                r.outputs.Add(still);
+                r.state = KionjoCaptureRequest.States.Failed;
+                r.reason = $"The capture could not be recorded: {ex.Message}";
+                Debug.LogException(ex);
             }
-            r.state = result.ok ? KionjoCaptureRequest.States.Taken : KionjoCaptureRequest.States.Failed;
-            r.reason = result.ok ? (result.warnings.Count > 0 ? string.Join(" ", result.warnings) : null) : result.error;
-            Record(p.entryFolder, r, media);
-            HeavyLock.ReleaseOwn(p.lockFolder);
-            WriteResult(p.resultPath, r);
-            Debug.Log($"Kionjo: capture {r.state}: {r.reason ?? string.Join(", ", result.videos.Select(Path.GetFileName))}");
-            var done = _done;
-            _done = null;
-            done?.Invoke(r);
-            if (p.batch && p.resultPath != null) EditorApplication.Exit(r.state == KionjoCaptureRequest.States.Taken ? 0 : 1);
+            finally
+            {
+                try { HeavyLock.ReleaseOwn(p.lockFolder); } catch (Exception ex) { Debug.LogException(ex); }
+                try { WriteResult(p.resultPath, r); } catch (Exception ex) { Debug.LogException(ex); }
+                Debug.Log($"Kionjo: capture {r.state}: {r.reason ?? string.Join(", ", result.videos.Select(Path.GetFileName))}");
+                var done = _done;
+                _done = null;
+                try { done?.Invoke(r); } catch (Exception ex) { Debug.LogException(ex); }
+                if (p.batch) EditorApplication.Exit(r.state == KionjoCaptureRequest.States.Taken ? 0 : 1);
+            }
         }
 
         /// <summary>
@@ -357,14 +421,14 @@ namespace SeedeXR.Kionjo.EditorTools
             }
             var file = args[at + 1];
             var r = Parse(File.ReadAllText(file), out var entry);
-            Run(entry, r, null, file + ".result.json");
+            Run(entry, r, null, file + ".result.json", exitWhenDone: true);
         }
 
         /// <summary>Starts a capture from a request file (the agent command); the state is in the entry and the result file.</summary>
         public static KionjoCaptureRequest RunFile(string requestFile)
         {
             var r = Parse(File.ReadAllText(requestFile), out var entry);
-            Run(entry, r, null, requestFile + ".result.json");
+            Run(entry, r, null, requestFile + ".result.json", exitWhenDone: false);
             return r;
         }
     }

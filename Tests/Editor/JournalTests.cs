@@ -172,5 +172,51 @@ namespace SeedeXR.Kionjo.Tests
             Assert.AreEqual(1, back.media.Count);
             Assert.IsNull(KionjoJournal.Update(Path.Combine(_dir, "nothing-here"), e => { }));
         }
+
+        static void Call(string method, params object[] args)
+        {
+            var m = typeof(KionjoJournal).GetMethod(method, new[] { typeof(JournalEntry) }) ?? typeof(KionjoJournal).GetMethod(method);
+            Assert.IsNotNull(m, $"KionjoJournal.{method} is missing");
+            m.Invoke(null, args);
+        }
+
+        /// <summary>The window saves its copy: media, captures and posts written since it loaded survive; its text and removals win.</summary>
+        [Test]
+        public void EditorSaveKeepsWhatOthersWroteSince()
+        {
+            var a = KionjoJournal.Create(_dir, "Hero", "Game", Day);
+            KionjoJournal.Update(a.Folder, e => e.media.Add(new JournalMedia { path = "old.mp4" }));
+            var window = KionjoJournal.Load(a.Folder, out _);
+            KionjoJournal.Update(a.Folder, e =>
+            {
+                e.media.Add(new JournalMedia { path = "attached.mp4" });
+                e.captures.Add(new KionjoCaptureRequest { id = "c1", state = "taken" });
+                e.posts.Add(new KionjoPost { id = "p1", name = "reel" });
+            });
+            window.achieved = "Typed in the window";
+            window.media.Clear();
+            Call("SaveEdited", window);
+            var back = KionjoJournal.Load(a.Folder, out _);
+            Assert.AreEqual("Typed in the window", back.achieved);
+            CollectionAssert.AreEqual(new[] { "attached.mp4" }, back.media.Select(m => m.path).ToList(), "removed old.mp4 stays removed, attached.mp4 is kept");
+            Assert.AreEqual("c1", back.captures.Single().id);
+            Assert.AreEqual("p1", back.posts.Single().id);
+        }
+
+        /// <summary>The watcher must recognise the window's own save, and only that one.</summary>
+        [Test]
+        public void EditorSaveIsRecognised()
+        {
+            var a = KionjoJournal.Create(_dir, "Hero", "Game", Day);
+            var m = typeof(KionjoJournal).GetMethod("IsEditorSave");
+            Assert.IsNotNull(m, "KionjoJournal.IsEditorSave is missing");
+            var window = KionjoJournal.Load(a.Folder, out _);
+            window.goal = "g";
+            Call("SaveEdited", window);
+            Assert.IsTrue((bool)m.Invoke(null, new object[] { a.Folder }));
+            System.Threading.Thread.Sleep(20);
+            KionjoJournal.Update(a.Folder, e => e.trick = "agent");
+            Assert.IsFalse((bool)m.Invoke(null, new object[] { a.Folder }));
+        }
     }
 }

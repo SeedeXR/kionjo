@@ -53,6 +53,8 @@ namespace SeedeXR.Kionjo.EditorTools
         /// <summary>Captures of this step: the backlog.</summary>
         public List<KionjoCaptureRequest> captures = new();
         [NonSerialized] public string Folder;
+        /// <summary>Media paths as loaded, so SaveEdited can tell files attached since from files the user removed.</summary>
+        [NonSerialized] public HashSet<string> LoadedMedia;
     }
 
     /// <summary>
@@ -150,6 +152,7 @@ namespace SeedeXR.Kionjo.EditorTools
                     c.rigs ??= new List<string>();
                     c.outputs ??= new List<string>();
                 }
+                e.LoadedMedia = new HashSet<string>(e.media.Select(m => m.path ?? ""), StringComparer.OrdinalIgnoreCase);
                 return e;
             }
             catch (Exception ex)
@@ -157,6 +160,44 @@ namespace SeedeXR.Kionjo.EditorTools
                 error = $"{file} could not be read: {ex.Message}";
                 return null;
             }
+        }
+
+        static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> EditorWrites = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Saves the editor's copy of an entry without losing what other writers saved since it was loaded:
+        /// the editor's fields win; media attached on disk since (not in LoadedMedia) are kept and added to the
+        /// copy; captures come from disk; posts on disk the copy does not hold are kept.
+        /// </summary>
+        public static void SaveEdited(JournalEntry edited)
+        {
+            if (string.IsNullOrEmpty(edited?.Folder)) throw new ArgumentException("The entry has no folder.");
+            var merged = Update(edited.Folder, disk =>
+            {
+                var known = edited.LoadedMedia ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var m in disk.media)
+                    if (!known.Contains(m.path ?? "") && !edited.media.Any(x => string.Equals(x.path, m.path, StringComparison.OrdinalIgnoreCase)))
+                        edited.media.Add(m);
+                edited.captures = disk.captures;
+                foreach (var p in disk.posts)
+                    if (!string.IsNullOrEmpty(p.id) && !edited.posts.Any(x => x.id == p.id)) edited.posts.Add(p);
+                JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(edited), disk);
+            });
+            if (merged == null) Save(edited);
+            edited.LoadedMedia = new HashSet<string>(edited.media.Select(m => m.path ?? ""), StringComparer.OrdinalIgnoreCase);
+            var file = Path.Combine(edited.Folder, FileName);
+            EditorWrites[Path.GetFullPath(edited.Folder)] = File.GetLastWriteTimeUtc(file);
+        }
+
+        /// <summary>
+        /// True while the entry file is exactly as the editor's SaveEdited left it: the watcher does not
+        /// rebind the form for the user's own saves (that would throw away what they are still typing).
+        /// </summary>
+        public static bool IsEditorSave(string folder)
+        {
+            if (string.IsNullOrEmpty(folder)) return false;
+            var file = Path.Combine(folder, FileName);
+            return EditorWrites.TryGetValue(Path.GetFullPath(folder), out var t) && File.Exists(file) && File.GetLastWriteTimeUtc(file) == t;
         }
 
         /// <summary>

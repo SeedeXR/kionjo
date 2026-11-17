@@ -56,14 +56,17 @@ namespace SeedeXR.Kionjo.EditorTools
                 }
                 catch (IOException) when (File.Exists(file))
                 {
-                    var h = Read(file);
-                    if (h != null && Alive(h.pid))
+                    var text = ReadText(file);
+                    var h = Parse(text);
+                    if (h != null && Alive(h))
                     {
                         holder = Describe(h);
                         return null;
                     }
-                    // Stale (its process is gone) or unreadable: replace it once.
-                    try { File.Delete(file); }
+                    // Stale (its process is gone, or the pid now belongs to a newer process) or unreadable: replace it
+                    // once, but only if nobody replaced it since we read it (two processes both seeing it stale).
+                    // ponytail: read-compare-delete still has a tiny window; an OS file lock would close it if it ever matters.
+                    try { if (ReadText(file) == text) File.Delete(file); }
                     catch (IOException) { }
                 }
             }
@@ -82,18 +85,34 @@ namespace SeedeXR.Kionjo.EditorTools
         static string Describe(Holder h) =>
             string.Format(CultureInfo.InvariantCulture, "{0} (pid {1}, {2:0.0} GB, since {3})", h.owner, h.pid, h.gb, h.since);
 
-        static Holder Read(string file)
+        static Holder Read(string file) => Parse(ReadText(file));
+
+        static string ReadText(string file)
         {
-            try { return JsonUtility.FromJson<Holder>(File.ReadAllText(file)); }
+            try { return File.ReadAllText(file); }
             catch (Exception) { return null; }
         }
 
-        static bool Alive(int pid)
+        static Holder Parse(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return null;
+            try { return JsonUtility.FromJson<Holder>(text); }
+            catch (Exception) { return null; }
+        }
+
+        /// <summary>
+        /// The holder still runs: its pid exists and that process started before the lock was taken. After a
+        /// restart Windows hands old pids to new processes, so a pid alone would keep a dead lock forever.
+        /// </summary>
+        static bool Alive(Holder h)
         {
             try
             {
-                using var p = Process.GetProcessById(pid);
-                return !p.HasExited;
+                using var p = Process.GetProcessById(h.pid);
+                if (p.HasExited) return false;
+                if (DateTime.TryParse(h.since, CultureInfo.InvariantCulture, DateTimeStyles.None, out var since)
+                    && p.StartTime > since.AddSeconds(2)) return false;
+                return true;
             }
             catch (Exception)
             {

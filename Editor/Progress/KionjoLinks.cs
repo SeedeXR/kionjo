@@ -50,7 +50,21 @@ namespace SeedeXR.Kionjo.EditorTools
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(dst));
-                if (File.Exists(dst)) File.Delete(dst);
+                bool sameVolume = string.Equals(Path.GetPathRoot(src), Path.GetPathRoot(dst), StringComparison.OrdinalIgnoreCase);
+                if (File.Exists(dst))
+                {
+                    // Already there and unchanged (a link shares its size and time; a copy keeps the source's time):
+                    // leave it, or every refresh re-copies gigabytes from another drive.
+                    // ponytail: on one volume an unchanged file is taken to be a link; true for NTFS, APFS, ext4.
+                    FileInfo s = new(src), d = new(dst);
+                    if (s.Length == d.Length && s.LastWriteTimeUtc == d.LastWriteTimeUtc)
+                    {
+                        if (sameVolume) return true;
+                        note = $"Copied {Path.GetFileName(src)}: it is on another drive.";
+                        return false;
+                    }
+                    File.Delete(dst);
+                }
                 if (TryLink(src, dst)) return true;
                 File.Copy(src, dst, true);
                 note = string.Equals(Path.GetPathRoot(src), Path.GetPathRoot(dst), StringComparison.OrdinalIgnoreCase)

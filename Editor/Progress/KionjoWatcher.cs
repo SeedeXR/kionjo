@@ -115,8 +115,10 @@ namespace SeedeXR.Kionjo.EditorTools
                     {
                         var e = all.FirstOrDefault(x => string.Equals(Path.GetFullPath(x.Folder), Path.GetFullPath(Path.GetDirectoryName(path)), StringComparison.OrdinalIgnoreCase));
                         if (e == null) continue;
-                        NewEntries.Add(e.Folder);
                         RefreshPostFolder(e);
+                        // The window's own save: refreshing would rebind the form and drop what is still being typed.
+                        if (KionjoJournal.IsEditorSave(e.Folder)) continue;
+                        NewEntries.Add(e.Folder);
                         changed = true;
                     }
                     else
