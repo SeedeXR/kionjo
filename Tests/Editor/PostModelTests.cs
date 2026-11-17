@@ -24,6 +24,51 @@ namespace SeedeXR.Kionjo.Tests
             Assert.AreEqual("Can one two three four five six?", HookTemplates.Fill(HookKind.Question, e));
         }
 
+        sealed class Lengths : IMediaInfo
+        {
+            public Dictionary<string, float> Seconds = new();
+            public float Duration(string path) => Seconds.TryGetValue(path, out var s) ? s : -1f;
+            public (int w, int h) Size(string path) => (1920, 1080);
+            public bool HasAudio(string path) => true;
+        }
+
+        static KionjoPost FromEntry(JournalEntry e, IMediaInfo info)
+        {
+            var m = typeof(KionjoPost).GetMethod("FromEntry", new[] { typeof(JournalEntry), typeof(IMediaInfo) });
+            Assert.IsNotNull(m, "KionjoPost.FromEntry(entry, info) is missing");
+            return (KionjoPost)m.Invoke(null, new object[] { e, info });
+        }
+
+        /// <summary>
+        /// Several angles of one moment (same length) are cut across in time, hook angle first: the post is as long as
+        /// the moment, not the angles one after another (7 angles of 28.8 s made a 201 s post that Kionjo refused).
+        /// </summary>
+        [Test]
+        public void FromEntry_AnglesOfOneMoment_CutAcross()
+        {
+            var e = new JournalEntry { title = "Hero" };
+            e.media.Add(new JournalMedia { path = "side.mp4", role = "broll" });
+            e.media.Add(new JournalMedia { path = "main.mp4", role = "hook" });
+            e.media.Add(new JournalMedia { path = "close.mp4", role = "broll" });
+            var info = new Lengths { Seconds = { ["main.mp4"] = 28.8f, ["side.mp4"] = 28.8f, ["close.mp4"] = 28.79f } };
+            var p = FromEntry(e, info);
+            CollectionAssert.AreEqual(new[] { "main.mp4", "side.mp4", "close.mp4" }, p.items.Select(i => i.path).ToArray());
+            Assert.AreEqual(0f, p.items[0].inPoint, 1e-3f);
+            Assert.AreEqual(p.items[0].outPoint, p.items[1].inPoint, 1e-3f, "each angle starts where the last one stopped");
+            Assert.AreEqual(p.items[1].outPoint, p.items[2].inPoint, 1e-3f);
+            Assert.AreEqual(28.79f, p.items[2].outPoint, 0.02f, "the cut runs to the end of the moment");
+        }
+
+        [Test]
+        public void FromEntry_DifferentClips_StayWhole()
+        {
+            var e = new JournalEntry { title = "Hero" };
+            e.media.Add(new JournalMedia { path = "a.mp4", role = "broll" });
+            e.media.Add(new JournalMedia { path = "b.mp4", role = "broll" });
+            var p = FromEntry(e, new Lengths { Seconds = { ["a.mp4"] = 4f, ["b.mp4"] = 9f } });
+            Assert.IsTrue(p.items.All(i => i.inPoint == 0f && i.outPoint == 0f));
+        }
+
         [Test]
         public void FromEntry_ItemsSkipStills_HookFirst()
         {

@@ -50,7 +50,29 @@ namespace SeedeXR.Kionjo.EditorTools
         /// A first post from an entry: every non-still media item (hook role first), the beats and then
         /// the decisions as overlays (first sentence each), the first hook option or a question hook.
         /// </summary>
-        public static KionjoPost FromEntry(JournalEntry e)
+        public static KionjoPost FromEntry(JournalEntry e) => FromEntry(e, null);
+
+        /// <summary>
+        /// As FromEntry(e); with info, videos of the same length (within a frame) are taken to be angles of one moment
+        /// (a Kionjo capture) and cut across in time, hook angle first, so the post is as long as the moment.
+        /// </summary>
+        public static KionjoPost FromEntry(JournalEntry e, IMediaInfo info)
+        {
+            var p = FromEntryWhole(e);
+            if (info == null || p.items.Count < 2 || p.items.Any(i => i.outPoint > i.inPoint)) return p;
+            var lengths = p.items.Select(i => info.Duration(i.path)).ToList();
+            // ponytail: "same length" stands for "same moment"; a capture's request id would say it for sure.
+            if (lengths.Any(l => l <= 0f) || lengths.Max() - lengths.Min() > 1f / 15f) return p;
+            float moment = lengths.Min(), share = moment / p.items.Count;
+            for (int k = 0; k < p.items.Count; k++)
+            {
+                p.items[k].inPoint = k * share;
+                p.items[k].outPoint = k == p.items.Count - 1 ? moment : (k + 1) * share;
+            }
+            return p;
+        }
+
+        static KionjoPost FromEntryWhole(JournalEntry e)
         {
             var p = new KionjoPost
             {

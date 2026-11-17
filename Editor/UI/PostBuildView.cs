@@ -52,7 +52,7 @@ namespace SeedeXR.Kionjo.EditorTools
 
         KionjoPost NewPost()
         {
-            var p = KionjoPost.FromEntry(_e);
+            var p = KionjoPost.FromEntry(_e, _info);
             if (_kit != null) p.endText = _kit.callToAction;
             return p;
         }
