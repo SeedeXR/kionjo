@@ -25,7 +25,7 @@ Unity Package Manager > Add package from git URL:
 https://github.com/SeedeXR/kionjo.git
 ```
 
-To stay on a release, add its tag: `https://github.com/SeedeXR/kionjo.git#v0.1.0`.
+To stay on a release, add its tag: `https://github.com/SeedeXR/kionjo.git#v0.2.0`.
 
 Requirements:
 
@@ -86,6 +86,24 @@ the project folder; add it to `.gitignore`):
 - `IKionjoRecordingHook`: start your own device capture together with a take.
 - `IKionjoFrameSink`: take the raw frames somewhere else.
 
+## Posts
+
+Kionjo also turns progress into short vertical posts (Instagram Reels first). Keep a journal entry per step of
+the work (what you are making, the reference, the goal, what you achieved, the hurdle, the trick, your decisions)
+and point it at clips and pictures you already have. The Posts tab (Window > Kionjo > Posts, no storyboard needed)
+builds a 1080x1920 post from it: hook, one sentence on screen at a time, captions, the app's safe zones, a cover
+and ready to paste caption text. Your look lives in a Brand Kit asset (Create > Kionjo > Brand Kit). Kionjo never
+posts anything: you post the file yourself.
+
+## Progress
+
+When AI agents (or you) build a feature step by step, Kionjo documents each step. A step is a journal entry; Kionjo
+watches the journal and your footage folder while the editor is open, films a step at the moment it exists from
+several frame-locked angles with its sound (`kionjo capture`, or a batch run), and gives every step a folder with
+the raw materials (hard links, no extra disk), Kionjo's own edit, a clean edit with subtitles for your video editor,
+and a brief. Heavy work asks for free memory first and takes a machine-wide lock, and older versions' videos are
+deleted once a newer one is built. See the agent guide.
+
 ## AI agents
 
 With `com.unity.pipeline` installed, every verb is a CLI command:
@@ -104,7 +122,7 @@ With `com.unity.pipeline` installed, every verb is a CLI command:
 
 ## Status
 
-v0.1, in development. Tested headless (EditMode and PlayMode, 142 tests) and live in the editor;
+v0.2, in development. Tested headless (EditMode and PlayMode, 266 tests) and live in the editor;
 the headset pass is [Documentation~/HeadsetPass.md](Documentation~/HeadsetPass.md).
 
 ## License

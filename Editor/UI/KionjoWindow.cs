@@ -13,7 +13,7 @@ namespace SeedeXR.Kionjo.EditorTools
     /// </summary>
     public class KionjoWindow : EditorWindow
     {
-        public enum Tab { Storyboard, Shoot, Cut }
+        public enum Tab { Storyboard, Shoot, Cut, Posts }
 
         public const string HelpUrl = KionjoHelp.Guide;
         const string LastKey = "SeedeXR.Kionjo.LastStoryboard";
@@ -24,8 +24,9 @@ namespace SeedeXR.Kionjo.EditorTools
         [SerializeField] int selected = -1;
 
         ObjectField _storyboardField;
-        ToolbarToggle _tabStoryboard, _tabShoot, _tabCut;
+        ToolbarToggle _tabStoryboard, _tabShoot, _tabCut, _tabPosts;
         VisualElement _empty, _storyboardBody, _shootBody, _cutBody;
+        PostsTab _postsTab;
         ListView _shots;
         ScrollView _inspectorScroll;
         ShotInspector _inspector;
@@ -160,6 +161,10 @@ namespace SeedeXR.Kionjo.EditorTools
             _cutBody.AddToClassList("kionjo-tab-body");
             body.Add(_cutBody);
 
+            _postsTab = new PostsTab(this) { name = "posts-body" };
+            _postsTab.AddToClassList("kionjo-tab-body");
+            body.Add(_postsTab);
+
             root.Add(BuildStatusBar());
             Rebuild();
             if (!EditorPrefs.GetBool(KionjoTour.SeenKey, false) && !Application.isBatchMode) ShowTour();
@@ -192,6 +197,8 @@ namespace SeedeXR.Kionjo.EditorTools
             bar.Add(_tabStoryboard);
             bar.Add(_tabShoot);
             bar.Add(_tabCut);
+            _tabPosts = TabToggle("tab-posts", "Posts", "Turn progress into ready to post Reels.", Tab.Posts);
+            bar.Add(_tabPosts);
 
             bar.Add(new VisualElement { style = { flexGrow = 1 } });
             bar.Add(new ToolbarButton(KionjoPreferences.Open) { name = "preferences", text = "Preferences", tooltip = "Preferences > Kionjo: ffmpeg path, encoder, Python." });
@@ -463,17 +470,23 @@ namespace SeedeXR.Kionjo.EditorTools
         {
             if (_empty == null) return;
             bool has = storyboard != null;
-            Show(_empty, !has);
+            // Posts works without a storyboard; the trailer tabs need one.
+            Show(_empty, !has && tab != Tab.Posts);
             Show(_storyboardBody, has && tab == Tab.Storyboard);
             Show(_shootBody, has && tab == Tab.Shoot);
             Show(_cutBody, has && tab == Tab.Cut);
+            Show(_postsTab, tab == Tab.Posts);
             _tabStoryboard.SetValueWithoutNotify(tab == Tab.Storyboard);
             _tabShoot.SetValueWithoutNotify(tab == Tab.Shoot);
             _tabCut.SetValueWithoutNotify(tab == Tab.Cut);
-            _tabStoryboard.SetEnabled(has);
-            _tabShoot.SetEnabled(has);
-            _tabCut.SetEnabled(has);
+            _tabPosts.SetValueWithoutNotify(tab == Tab.Posts);
+            // From Posts with no storyboard the trailer tabs stay reachable (they show the empty state).
+            bool reachable = has || tab == Tab.Posts;
+            _tabStoryboard.SetEnabled(reachable);
+            _tabShoot.SetEnabled(reachable);
+            _tabCut.SetEnabled(reachable);
             if (tab == Tab.Cut) _cutTab.Refresh();
+            if (tab == Tab.Posts) _postsTab.Refresh();
             if (tab == Tab.Shoot) _shootTab.SetShot(SelectedShot);
         }
 

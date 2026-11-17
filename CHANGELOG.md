@@ -3,6 +3,42 @@
 All notable changes to Kionjo are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-11-17
+
+### Added
+
+- Progress: Kionjo documents a feature step by step.
+  - Journal entries carry `feature`, `version`, `brief` and a capture backlog (`captures`); a later entry of the same
+    feature supersedes the step and drops its pending captures.
+  - Watcher (editor, file system events, no polling loop): changed entries and new footage in the footage folder's
+    day folders are noticed; found footage is added to the right entry with its `notes.md` line. It never renders.
+  - Capture at the moment: one Play mode run filmed by up to seven frame-locked rigs placed from the subject's size
+    (main, main-vertical, wide, orbit, side, low, close), the scene's sound in every file, stills, notes lines and
+    entry media. `kionjo capture` command and a batch entry point with a result file.
+  - Post folder per step, `<created>_<slug>/vNN/`: `materials/` (hard links, copies across drives), `post/`,
+    `capcut/` (clean edit and SRT), `recipe/`, `BRIEF.md`. A new build deletes the older versions' videos.
+  - Resources: a free memory check (twice the need, a floor left free) and a machine-wide heavy-work lock.
+  - Preferences: footage folder, watch progress, keep free (GB), heavy-work lock folder.
+
+- Posts (phase 1): turn a step of the work into a ready to post 1080x1920 Reel, with no storyboard needed.
+  - Journal: one `entry.json` per step in a per-machine folder (Preferences > Kionjo > Journal folder): the six
+    beats, stage (idea, prototype, build, complete), decisions, story type, media by absolute path, hook options.
+  - Brand kit asset (Create > Kionjo > Brand Kit) and Posts settings (output folder, active kit), neutral defaults.
+  - Post builder: hook templates (claim, promise, question, POV), overlays timed by reading speed, the safe zones,
+    crop or blur fill to 9:16, clip sound with silence for clips without sound, optional music ducked under speech,
+    word by word captions, loudness -14 LUFS, a call to action or a loop end.
+  - The bundle: video with text, a no-music version (when music is set), a clean version plus SRT, a cover,
+    caption text, `post.json` and `commands.txt` so the post can be rebuilt.
+  - Warnings from the platform basics (length, no text, long hook, long shots, jargon, other apps' watermarks,
+    footage that is not yours, silence); posts over 3 minutes are refused.
+  - Posts tab in the Kionjo window: journal list with story balance, entry editor, post builder with a preview
+    frame showing the safe zones, live warnings, Build post, Mark as posted, and a grid of the latest covers.
+  - Tools > Kionjo > Build post from journal entry.
+
+### Changed
+
+- Post bundles moved from `posts/<slug>/<post id>/` to the versioned step folder (Progress).
+
 ## [0.1.0] - 2026-10-23
 
 ### Added
