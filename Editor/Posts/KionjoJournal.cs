@@ -55,6 +55,8 @@ namespace SeedeXR.Kionjo.EditorTools
         [NonSerialized] public string Folder;
         /// <summary>Media paths as loaded, so SaveEdited can tell files attached since from files the user removed.</summary>
         [NonSerialized] public HashSet<string> LoadedMedia;
+        /// <summary>Every top-level member of the file as loaded (raw), so fields Kionjo does not know survive a save.</summary>
+        [NonSerialized] public List<KeyValuePair<string, string>> Extra;
     }
 
     /// <summary>
@@ -113,6 +115,21 @@ namespace SeedeXR.Kionjo.EditorTools
         }
 
         /// <summary>Pretty JSON, UTF-8 without BOM, written beside the file then moved into place.</summary>
+        /// <summary>Kionjo's fields, then every member the file had that Kionjo does not know, exactly as it was.</summary>
+        static string ToJson(JournalEntry e)
+        {
+            var json = JsonUtility.ToJson(e, true);
+            if (e.Extra == null || e.Extra.Count == 0) return json;
+            var known = new HashSet<string>(JsonMembers.Object(json).Select(m => m.Key));
+            var extra = e.Extra.Where(m => !known.Contains(m.Key)).ToList();
+            if (extra.Count == 0) return json;
+            var s = new StringBuilder(json.Substring(0, json.LastIndexOf('}')).TrimEnd());
+            foreach (var m in extra) s.Append(",\n    \"").Append(EscapeKey(m.Key)).Append("\": ").Append(m.Value);
+            return s.Append("\n}").ToString();
+        }
+
+        static string EscapeKey(string key) => (key ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
+
         public static void Save(JournalEntry e)
         {
             if (string.IsNullOrEmpty(e?.Folder)) throw new ArgumentException("The entry has no folder.");
@@ -122,7 +139,7 @@ namespace SeedeXR.Kionjo.EditorTools
             lock (SaveLock)
             {
                 var partial = target + ".partial";
-                File.WriteAllText(partial, JsonUtility.ToJson(e, true), new UTF8Encoding(false));
+                File.WriteAllText(partial, ToJson(e), new UTF8Encoding(false));
                 if (File.Exists(target)) File.Replace(partial, target, null);
                 else File.Move(partial, target);
             }
@@ -135,13 +152,33 @@ namespace SeedeXR.Kionjo.EditorTools
             var file = Path.Combine(folder, FileName);
             try
             {
-                var e = JsonUtility.FromJson<JournalEntry>(File.ReadAllText(file));
+                var text = File.ReadAllText(file);
+                // Entries written by hand or by other tools list media as plain paths (or a mix) and carry fields
+                // Kionjo does not know: read media here, keep every member raw so Save can write them back.
+                var members = JsonMembers.Object(text);
+                List<JournalMedia> media = null;
+                var mediaRaw = members.FirstOrDefault(m => m.Key == "media").Value;
+                if (mediaRaw != null)
+                {
+                    media = new List<JournalMedia>();
+                    foreach (var item in JsonMembers.Array(mediaRaw))
+                    {
+                        var path = JsonMembers.Unquote(item);
+                        if (path != null) media.Add(new JournalMedia { path = path });
+                        else if (item.StartsWith("{")) media.Add(JsonUtility.FromJson<JournalMedia>(item));
+                    }
+                    text = "{" + string.Join(",", members.Where(m => m.Key != "media").Select(m => $"\"{EscapeKey(m.Key)}\":{m.Value}")) + "}";
+                }
+                var e = JsonUtility.FromJson<JournalEntry>(text);
                 if (e == null)
                 {
                     error = $"{file} is empty.";
                     return null;
                 }
                 e.Folder = folder;
+                e.Extra = members;
+                if (media != null) e.media = media;
+                if (string.IsNullOrEmpty(e.created)) e.created = JsonMembers.Unquote(members.FirstOrDefault(m => m.Key == "date").Value);
                 e.decisions ??= new List<string>();
                 e.media ??= new List<JournalMedia>();
                 e.hookOptions ??= new List<string>();
