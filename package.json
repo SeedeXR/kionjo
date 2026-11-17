@@ -1,6 +1,6 @@
 {
   "name": "com.seedexr.kionjo",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "displayName": "Kionjo",
   "description": "Trailer tool for Unity: storyboard, record a performance in the headset or with any camera, replay it frame locked, render offline, auto cut with ffmpeg; posts from your progress.",
   "unity": "6000.0",

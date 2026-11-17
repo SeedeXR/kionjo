@@ -3,6 +3,14 @@
 All notable changes to Kionjo are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.3] - 2026-11-17
+
+### Fixed
+
+- A post made from an entry whose videos are angles of one moment (a Kionjo capture: same length) cuts across them
+  in time, hook angle first, so it is as long as the moment. Before, the angles played one after another (seven
+  angles of 28.8 s made a 201 s post, which was refused).
+
 ## [0.2.2] - 2026-11-17
 
 ### Added

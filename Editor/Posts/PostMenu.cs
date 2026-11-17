@@ -100,9 +100,10 @@ namespace SeedeXR.Kionjo.EditorTools
             }
             var settings = KionjoPostsSettings.instance;
             var kit = settings.ActiveKit;
-            var post = e.posts.Count > 0 ? e.posts[e.posts.Count - 1] : KionjoPost.FromEntry(e);
+            var info = new FfprobeMediaInfo();
+            var post = e.posts.Count > 0 ? e.posts[e.posts.Count - 1] : KionjoPost.FromEntry(e, info);
             if (post.end == PostEnd.CallToAction && string.IsNullOrWhiteSpace(post.endText) && kit != null) post.endText = kit.callToAction;
-            return new PostJob(e, post, kit, KionjoPaths.PostsRoot(settings.outputFolder), ffmpeg, new FfprobeMediaInfo(), path => WordTimer.Words(path, out _));
+            return new PostJob(e, post, kit, KionjoPaths.PostsRoot(settings.outputFolder), ffmpeg, info, path => WordTimer.Words(path, out _));
         }
     }
 }
