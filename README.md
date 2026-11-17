@@ -25,7 +25,7 @@ Unity Package Manager > Add package from git URL:
 https://github.com/SeedeXR/kionjo.git
 ```
 
-To stay on a release, add its tag: `https://github.com/SeedeXR/kionjo.git#v0.1.0`.
+To stay on a release, add its tag: `https://github.com/SeedeXR/kionjo.git#v0.2.0`.
 
 Requirements:
 
@@ -122,7 +122,7 @@ With `com.unity.pipeline` installed, every verb is a CLI command:
 
 ## Status
 
-v0.1, in development. Tested headless (EditMode and PlayMode, 142 tests) and live in the editor;
+v0.2, in development. Tested headless (EditMode and PlayMode, 266 tests) and live in the editor;
 the headset pass is [Documentation~/HeadsetPass.md](Documentation~/HeadsetPass.md).
 
 ## License
