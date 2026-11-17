@@ -7,7 +7,7 @@ using UnityEngine;
 namespace SeedeXR.Kionjo.EditorTools
 {
     /// <summary>
-    /// Turns a CutPlan into the ffmpeg steps of Baraza's trailer 1 cut: one encode per segment,
+    /// Turns a CutPlan into the ffmpeg steps of a hand-made VR trailer cut: one encode per segment,
     /// concat, burned subtitles, one audio graph (voice, music with crossfade and ducking, SFX,
     /// loudness), mux. Every command runs in the cut folder; anything inside a filtergraph is a
     /// relative name, so paths with spaces, brackets or drive colons never need escaping.

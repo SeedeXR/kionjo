@@ -38,8 +38,8 @@ namespace SeedeXR.Kionjo.Tests
         [Test]
         public void ToShellString_QuotesSpacesAndBrackets()
         {
-            var cmd = new FfmpegCommand { Args = { "-i", "D:/BERNARD/UNITY PROJECTS (GAMES)/x [1].mp4" } };
-            Assert.AreEqual("ffmpeg -i \"D:/BERNARD/UNITY PROJECTS (GAMES)/x [1].mp4\"", cmd.ToShellString());
+            var cmd = new FfmpegCommand { Args = { "-i", "D:/Work/MY PROJECTS (GAMES)/x [1].mp4" } };
+            Assert.AreEqual("ffmpeg -i \"D:/Work/MY PROJECTS (GAMES)/x [1].mp4\"", cmd.ToShellString());
         }
 
         [Test]

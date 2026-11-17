@@ -33,7 +33,7 @@ editor:
 ```json
 {
   "storyboard": "Assets/Trailer/Storyboard.asset",
-  "title": "Baraza Trailer",
+  "title": "My Trailer",
   "isPlaying": true,
   "isRecording": false,
   "currentShot": "ab72ffac99ba4865805fe10b224a88a7",

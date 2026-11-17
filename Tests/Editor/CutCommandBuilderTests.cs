@@ -132,7 +132,7 @@ namespace SeedeXR.Kionjo.Tests
         [Test]
         public void SourceWithSpacesAndBrackets_IsOneArg()
         {
-            var src = "D:/BERNARD/UNITY PROJECTS (GAMES)/x [1].mp4";
+            var src = "D:/Work/MY PROJECTS (GAMES)/x [1].mp4";
             var args = CutCommandBuilder.Segment(new CutSegment { Label = "01_S01", Kind = SegmentKind.Video, SourcePath = src, Duration = 1 }, Plan()).Args;
             Assert.AreEqual(src, args[args.IndexOf("-i") + 1]);
         }

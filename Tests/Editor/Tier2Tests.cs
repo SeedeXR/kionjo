@@ -51,8 +51,8 @@ namespace SeedeXR.Kionjo.Tests
 
         [Test]
         public void PathUrl_EscapesSpacesAndBrackets() =>
-            Assert.AreEqual("file://localhost/D:/BERNARD/UNITY%20PROJECTS%20(GAMES)/x%20%5B1%5D.mp4",
-                Fcp7XmlWriter.PathUrl("D:\\BERNARD\\UNITY PROJECTS (GAMES)\\x [1].mp4"));
+            Assert.AreEqual("file://localhost/D:/Work/MY%20PROJECTS%20(GAMES)/x%20%5B1%5D.mp4",
+                Fcp7XmlWriter.PathUrl("D:\\Work\\MY PROJECTS (GAMES)\\x [1].mp4"));
 
         [Test]
         public void Audio_Tracks_InOrderVoiceMusicSfx_AndFilesReused()

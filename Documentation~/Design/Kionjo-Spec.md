@@ -1,8 +1,8 @@
 # Kionjo: design spec, v0.1
 
-Date: 2026-10-23. Status: written overnight by the planner for Bernard's morning review. Every
+Date: 2026-10-23. Status: written overnight by the planner for the maintainer's morning review. Every
 open decision was closed with the recommended option and recorded in section 12 (choice, why,
-alternative). Bernard redirects anything he disagrees with; nothing here is final until he reads it.
+alternative). the maintainer redirects anything he disagrees with; nothing here is final until he reads it.
 
 Kionjo (Swahili for "trailer") is an open source Unity editor package that turns the pipeline that
 produced Baraza's trailer 1 into a tool: perform a shot (in a headset or with any camera), record
@@ -11,8 +11,7 @@ cut a draft with ffmpeg (voice, subtitles, music with ducking, SFX at recorded e
 export MP4, SRT and a Premiere timeline.
 
 Companion documents: `Kionjo-v0.1-Plan.md` (the implementation plan, same folder); the source
-plan `Baraza VR/Design/Trailer/TrailerTool-Plan.md`; the reference cut
-`Baraza VR/Design/Trailer/tools/cut/cut_trailer_v1.sh`.
+plan and the reference cut script live in the original trailer project (private).
 
 ## 1. Problem
 
@@ -394,7 +393,7 @@ executor's machine; the SVG is the source of truth for a designer later.
   patch), replayer frame lock (pose at frame k equals sample at k/fps), event firing, restore of
   `captureDeltaTime` on stop, frame capture of a coloured scene through the ffmpeg pipe (frame
   count by ffprobe, orientation by sampling the top pixel), the Tier 1 end to end scenario.
-- Headset pass (Bernard, `Documentation~/HeadsetPass.md`): record over Link with real head and
+- Headset pass (the maintainer, `Documentation~/HeadsetPass.md`): record over Link with real head and
   hands, unplug, replay and render, compare motion. Marked "needs headset pass" in the plan.
 
 Run: `unity test "<TestProject>" --mode EditMode --filter SeedeXR.Kionjo` and `--mode PlayMode`.
@@ -443,7 +442,7 @@ installed tools (planner's research agent and direct CLI calls):
   `Editor` type clash), README with Install via git URL. Hadithi has no tests; Kionjo adds the
   standard `Tests/Editor` and `Tests/Runtime` layout.
 
-Side finding for Bernard (not in scope): Baraza's `Packages/manifest.json` asks for URP 17.4.0
+Side finding for the maintainer (not in scope): Baraza's `Packages/manifest.json` asks for URP 17.4.0
 while `Library/PackageCache` resolves 17.0.4; CLAUDE.md says 17.0.4.
 
 ## 12. Decisions
@@ -455,11 +454,11 @@ while `Library/PackageCache` resolves 17.0.4; CLAUDE.md says 17.0.4.
 | 3 | Offline render path | Own capture: camera `targetTexture`, `AsyncGPUReadback`, raw RGBA piped to ffmpeg | No package dependency, 4K independent of the Game view, ffmpeg is required anyway, headless friendly | Unity Recorder 5.1.7 (public API, Play mode only, adds a dependency, MP4 encoder fixed); PNG sequence then ffmpeg (slow encode, huge disk) |
 | 4 | Which camera renders | The user's own camera (`KionjoCameraSource.camera` or `Camera.main`) driven in place | A proxy would need per-pipeline copying of URP camera data and post processing; in place keeps the user's look | Proxy camera cloned from the source |
 | 5 | Replay clock | `Time.captureDeltaTime = 1/fps`, transforms written in `LateUpdate` (order 32000) and again in `Application.onBeforeRender` | Deterministic; the second write wins over XR pose drivers that update before render | Record and replay in `Update` (XR rigs overwrite) |
-| 6 | Head processing | Roll lock on, 0.1 s centred smoothing, cuts at 0.5 m or 25 degrees, all per replayer and exposed | Trailer 1 values that Bernard approved; hardware jitter needs a knob | Raw replay only |
+| 6 | Head processing | Roll lock on, 0.1 s centred smoothing, cuts at 0.5 m or 25 degrees, all per replayer and exposed | Trailer 1 values that the maintainer approved; hardware jitter needs a knob | Raw replay only |
 | 7 | Events on replay | Raised as `(name, payload)` to the game; Kionjo never presses anything | Trailer 1 lesson: an offline render has no microphone; the game owns the UI state | Reflection into game UI (Baraza did this; not generic) |
 | 8 | Cards | A shot type, in the same list | Opening line, closing lines and cover are beats with lengths; one list, one timeline | Separate opening and closing card lists |
 | 9 | Animatic | A cut with image sources | Reuses the whole cut path, zero new ffmpeg code beyond image segments | A Play mode slideshow (new code, no export) |
-| 10 | ffmpeg invocation | `ProcessStartInfo.ArgumentList`, working directory = output folder, relative names inside filtergraphs | Bernard's paths contain spaces, parentheses and brackets; v1 hit a Git Bash path bug on brackets | Shell strings with escaping |
+| 10 | ffmpeg invocation | `ProcessStartInfo.ArgumentList`, working directory = output folder, relative names inside filtergraphs | the maintainer's paths contain spaces, parentheses and brackets; v1 hit a Git Bash path bug on brackets | Shell strings with escaping |
 | 11 | Window structure | One window, three tabs, `Window/Kionjo` | Fewer windows to dock; Unity's own panels live under Window | Separate Storyboard, Shoot and Cut windows; `Tools/Kionjo` |
 | 12 | Shot list implementation | `ListView` bound to the `shots` array with a custom card item | Reorder, add, remove and Undo come from the binding | Unbound `itemsSource` with `Undo.RecordObject` on pointer down (the plan's fallback if custom items fight the binding) |
 | 13 | Render audio | Tier 2 through `AudioRenderer` to WAV, muxed by ffmpeg | Only route that stays in step with the capture clock | `OnAudioFilterRead` (wall clock, drifts under frame lock) |
@@ -508,10 +507,10 @@ while `Library/PackageCache` resolves 17.0.4; CLAUDE.md says 17.0.4.
    that stopping anywhere leaves a working package and a commit. Each task ends with its own
    commit.
 7. **FCP7 XML cannot be import-tested tonight.** No Premiere or Resolve on the path. The writer
-   is tested structurally; Bernard imports the first XML.
+   is tested structurally; the maintainer imports the first XML.
 8. **Headset behaviour unverified.** Recorder and replayer are tested on fake transforms. The
-   headset pass script is for Bernard.
-9. **Two editors.** Bernard's Baraza editor may be open. Every CLI call in the plan passes the
+   headset pass script is for the maintainer.
+9. **Two editors.** the maintainer's Baraza editor may be open. Every CLI call in the plan passes the
    test project path explicitly; `unity test` needs the test project's editor closed first.
 
 ## 14. Out of scope for v0.1
@@ -537,4 +536,4 @@ while `Library/PackageCache` resolves 17.0.4; CLAUDE.md says 17.0.4.
 5. Cinemachine sample scene and a Recorder bridge if a team asks.
 6. Agent bridge polish: watch mode, `kionjo_suggest` that reads a script and a scene inventory.
 7. OpenUPM listing, GitHub Actions running `unity test` on 6000.0, README screenshots.
-8. Trailer study (Bernard's links) feeding default pacing presets.
+8. Trailer study (the maintainer's links) feeding default pacing presets.
