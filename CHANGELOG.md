@@ -3,6 +3,19 @@
 All notable changes to Kionjo are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.2] - 2026-11-17
+
+### Added
+
+- Build a post without the window: `kionjo post --entry <folder>`, and a batch entry point
+  (`-executeMethod SeedeXR.Kionjo.EditorTools.PostMenu.RunFromCommandLine -kionjoPost <entry folder>`).
+
+### Fixed
+
+- Journal entries written by hand or by other tools are read and saved safely: media may be plain paths (or a
+  mix with objects), `date` stands in for `created`, and every field Kionjo does not know is written back exactly.
+  Before, such media read as empty and unknown fields were dropped on the first save.
+
 ## [0.2.1] - 2026-11-17
 
 ### Added

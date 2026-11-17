@@ -196,6 +196,15 @@ namespace SeedeXR.Kionjo.Agent
             return new { ok = true, message = $"Imported {n} shot(s){(replace ? ", replacing the storyboard" : "")}." };
         }
 
+        [CliCommand(Group, "post", "Build a journal entry's latest post (or a first one made from the entry) into its post folder. Waits until it is built.", Tags = new[] { "kionjo" })]
+        public static object Post([CliArg("entry", "The entry's folder in the journal.", Required = true)] string entry)
+        {
+            if (!Directory.Exists(entry)) return Fail($"No folder {entry}.");
+            var job = PostMenu.BuildNow(entry, out var error);
+            if (job == null || job.Failed) return Fail($"The post was not built: {error}");
+            return new { ok = true, message = $"Built {job.OutputMp4}.", folder = job.Folder, warnings = job.Warnings };
+        }
+
         [CliCommand(Group, "capture", "Film a journal step now: one Play mode run from several frame-locked rigs, with sound and stills. Returns at once; the result is written to <request>.result.json and the entry.", Tags = new[] { "kionjo" })]
         public static object Capture([CliArg("request", "Capture request JSON file (see the agent guide, Progress).", Required = true)] string request)
         {

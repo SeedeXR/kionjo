@@ -153,7 +153,12 @@ Footage folder: one `yyyy-MM-dd` folder per day, with a `notes.md` holding one l
 in a day folder is added to that day's entry (the one whose `feature` starts the file name, `<feature>-...`, or the
 only entry of that day), noted "found in footage folder" plus its notes line. Kionjo only ever appends to `media`,
 changes the `state` and `reason` of `captures` and writes `posts`; every write loads the entry from disk, merges and
-saves, so text you saved in between is kept.
+saves, so text you saved in between is kept. Entries you write yourself may list `media` as plain paths (or mix
+paths and objects) and use `date` instead of `created`; fields Kionjo does not know are written back unchanged.
+
+Build a step's post without the window: `unity command kionjo post --entry <entry folder> --project-path "<project>"`,
+or in batch mode `-executeMethod SeedeXR.Kionjo.EditorTools.PostMenu.RunFromCommandLine -kionjoPost <entry folder>`
+(exits 0 when built).
 
 Each step gets a post folder, `<output>/posts/<created>_<slug>/vNN/`:
 

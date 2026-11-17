@@ -38,6 +38,55 @@ namespace SeedeXR.Kionjo.EditorTools
             KionjoJobs.Enqueue(job);
         }
 
+        /// <summary>
+        /// Builds the entry's latest post (or a first one made from the entry) now, on this thread: for agents and
+        /// batch runs. Returns the finished job, or null with the reason.
+        /// </summary>
+        public static PostJob BuildNow(string entryFolder, out string error)
+        {
+            var job = CreateJob(entryFolder, out error);
+            if (job == null) return null;
+            try
+            {
+                job.RunAsync(System.Threading.CancellationToken.None).GetAwaiter().GetResult();
+            }
+            catch (System.Exception ex)
+            {
+                job.Failed = true;
+                job.Error = ex.Message;
+            }
+            job.IsDone = true;
+            if (job.Failed) error = job.Error;
+            return job;
+        }
+
+        /// <summary>
+        /// Batch entry point: Unity -batchmode -projectPath P -executeMethod
+        /// SeedeXR.Kionjo.EditorTools.PostMenu.RunFromCommandLine -kionjoPost &lt;entry folder&gt; (no -quit: the editor
+        /// exits by itself, 0 when the post was built, 1 when not).
+        /// </summary>
+        public static void RunFromCommandLine()
+        {
+            var args = System.Environment.GetCommandLineArgs();
+            int at = System.Array.IndexOf(args, "-kionjoPost");
+            if (at < 0 || at + 1 >= args.Length || !Directory.Exists(args[at + 1]))
+            {
+                Debug.LogError("Kionjo: -kionjoPost <entry folder> is missing or not found.");
+                EditorApplication.Exit(2);
+                return;
+            }
+            var job = BuildNow(args[at + 1], out var error);
+            if (job == null || job.Failed)
+            {
+                Debug.LogError($"Kionjo: post failed. {error}");
+                EditorApplication.Exit(1);
+                return;
+            }
+            foreach (var w in job.Warnings) Debug.LogWarning($"Kionjo post: {w}");
+            Debug.Log($"Kionjo: post built in {job.Folder}: {job.OutputMp4}");
+            EditorApplication.Exit(0);
+        }
+
         /// <summary>A job for the entry in entryFolder, or null with the reason.</summary>
         public static PostJob CreateJob(string entryFolder, out string error)
         {

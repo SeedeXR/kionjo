@@ -173,6 +173,43 @@ namespace SeedeXR.Kionjo.Tests
             Assert.IsNull(KionjoJournal.Update(Path.Combine(_dir, "nothing-here"), e => { }));
         }
 
+        const string HandWritten = "{\n  \"date\": \"2026-11-17\",\n  \"project\": \"Game\",\n  \"title\": \"Hand written\",\n  \"making\": \"x\",\n" +
+            "  \"media\": [\n    \"D:/Footage/a b [1].mp4\",\n    { \"path\": \"D:/Footage/b.png\", \"role\": \"still\" },\n    \"D:/Footage/c \\\"q\\\".mp4\"\n  ],\n" +
+            "  \"custom\": { \"nested\": [1, 2, {\"k\": \"v}\"}] },\n  \"hookOptions\": [\"one\"]\n}";
+
+        string WriteHandWritten()
+        {
+            var folder = Path.Combine(_dir, "2026-11-17-hand-written");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, "entry.json"), HandWritten);
+            return folder;
+        }
+
+        /// <summary>Entries written by hand or by other tools: media as plain paths (or mixed), "date" for the day.</summary>
+        [Test]
+        public void LoadsHandWrittenEntry()
+        {
+            var e = KionjoJournal.Load(WriteHandWritten(), out var error);
+            Assert.IsNotNull(e, error);
+            CollectionAssert.AreEqual(new[] { "D:/Footage/a b [1].mp4", "D:/Footage/b.png", "D:/Footage/c \"q\".mp4" }, e.media.Select(m => m.path).ToList());
+            Assert.AreEqual("still", e.media[1].role);
+            Assert.AreEqual("2026-11-17", e.created);
+            Assert.AreEqual("Hand written", e.title);
+        }
+
+        /// <summary>Kionjo writing to someone else's entry keeps every field it does not know, exactly.</summary>
+        [Test]
+        public void SaveKeepsFieldsKionjoDoesNotKnow()
+        {
+            var folder = WriteHandWritten();
+            KionjoJournal.Update(folder, e => e.media.Add(new JournalMedia { path = "D:/Footage/new.mp4" }));
+            var raw = File.ReadAllText(Path.Combine(folder, "entry.json"));
+            StringAssert.Contains("\"date\": \"2026-11-17\"", raw);
+            StringAssert.Contains("\"custom\": { \"nested\": [1, 2, {\"k\": \"v}\"}] }", raw);
+            var back = KionjoJournal.Load(folder, out _);
+            CollectionAssert.AreEqual(new[] { "D:/Footage/a b [1].mp4", "D:/Footage/b.png", "D:/Footage/c \"q\".mp4", "D:/Footage/new.mp4" }, back.media.Select(m => m.path).ToList());
+        }
+
         static void Call(string method, params object[] args)
         {
             var m = typeof(KionjoJournal).GetMethod(method, new[] { typeof(JournalEntry) }) ?? typeof(KionjoJournal).GetMethod(method);
