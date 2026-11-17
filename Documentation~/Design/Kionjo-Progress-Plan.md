@@ -20,7 +20,7 @@
 - On-screen and brief text in plain words. JSON written by `JsonUtility`, UTF-8 without BOM, pretty printed.
 - Kionjo never deletes footage or captures (source). It deletes only: intermediate files of a finished post, and videos (`.mp4 .mov .webm .mkv`) in older `vNN` folders of the same entry once a newer `vNN` is complete.
 - Memory rule for heavy jobs: free commit at least 2x the job's estimate AND at least `floorGB` (default 8) left after it.
-- Test run (Git Bash): `export PATH="$PATH:/c/Users/Seede Sr/AppData/Local/Unity/bin"; TP="D:/BERNARD/UNITY PROJECTS (GAMES)/Kionjo-TestProject"; unity test "$TP" --mode EditMode --filter SeedeXR.Kionjo --output "$TP/test-results.xml" --timeout 900; echo exit=$?` (0 = pass, 6 = failures). PlayMode: same with `--mode PlayMode`. The TP editor must be closed. Before every run: check free memory, tell the other Claude sessions, note `Get-Process Unity` PIDs, and confirm any Unity you started is gone afterwards. Never write package files while a test run compiles.
+- Test run (Git Bash): `export PATH="$PATH:<folder of the unity CLI>"; TP="<test project>"; unity test "$TP" --mode EditMode --filter SeedeXR.Kionjo --output "$TP/test-results.xml" --timeout 900; echo exit=$?` (0 = pass, 6 = failures). PlayMode: same with `--mode PlayMode`. The TP editor must be closed. Before every run: check free memory, tell the other Claude sessions, note `Get-Process Unity` PIDs, and confirm any Unity you started is gone afterwards. Never write package files while a test run compiles.
 
 ## Review Focus
 

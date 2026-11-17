@@ -84,7 +84,7 @@ Agents already write journal entries (`AgentGuide.md`). A step of progress is on
 
 | Field | Meaning |
 |---|---|
-| `feature` | The arc the step belongs to (for example "curator"); groups steps into a series |
+| `feature` | The arc the step belongs to (for example "hero"); groups steps into a series |
 | `version` | Where the version lives: branch and commit, or a tag. Informational; never checked out by Kionjo |
 | `captures` | The backlog for this step: list of capture requests (6.3) with state |
 | `brief` | Optional free text (Markdown) the agent writes for the editor: approach, why, shot ideas. Kionjo puts it in the brief file as is |

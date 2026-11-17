@@ -14,7 +14,7 @@
 
 ## Global Constraints
 
-- Package root `PKG` = `D:\BERNARD\UNITY PROJECTS (GAMES)\kionjo`, branch `posts`. Test project `TP` = `D:\BERNARD\UNITY PROJECTS (GAMES)\Kionjo-TestProject` (references the package by `file:../../kionjo`, listed in `testables`). Do not touch any consuming project's repo.
+- Package root `PKG` = `<package folder>`, branch `posts`. Test project `TP` = `<test project>` (references the package by `file:../../kionjo`, listed in `testables`). Do not touch any consuming project's repo.
 - Namespace `SeedeXR.Kionjo.EditorTools` for code, `SeedeXR.Kionjo.Tests` for tests. No new assemblies, no new package dependencies. The Runtime assembly is not touched.
 - Trailer tabs (Storyboard, Shoot, Cut) behave exactly as before; only the Posts tab works without a storyboard.
 - The public package ships no studio identity: no logos, project names or collaborator handles in code defaults. Defaults are neutral.
@@ -24,7 +24,7 @@
 - Safe zone on 1080x1920 (scale linearly by height for other sizes): top 270 px, bottom 670 px, right 150 px, left 65 px clear; hook and cover titles inside y 420 to 1500.
 - Post defaults: hook visible from 0.5 s, at most 7 words, held at least 2 s; overlay reading time `max(2, words / 3)` seconds; length warning above 90 s, refuse above 180 s; at most 5 hashtags.
 - Tests: `[Test]` in `PKG/Tests/Editor`. Temp files under `Path.Combine(Path.GetTempPath(), "KionjoTests", TestContext.CurrentContext.Test.Name)`, deleted in `[TearDown]`.
-- Verify (Git Bash): `UNITY` means `export PATH="$PATH:/c/Users/Seede Sr/AppData/Local/Unity/bin"; TP="D:/BERNARD/UNITY PROJECTS (GAMES)/Kionjo-TestProject"`. Test run: `UNITY; unity test "$TP" --mode EditMode --filter SeedeXR.Kionjo --output "$TP/test-results.xml" --timeout 900; echo exit=$?` (exit 0 = pass, 6 = failures; read `total/passed/failed` on `<test-run>`). The TP editor must be closed for `unity test`.
+- Verify (Git Bash): `UNITY` means `export PATH="$PATH:<folder of the unity CLI>"; TP="<test project>"`. Test run: `UNITY; unity test "$TP" --mode EditMode --filter SeedeXR.Kionjo --output "$TP/test-results.xml" --timeout 900; echo exit=$?` (exit 0 = pass, 6 = failures; read `total/passed/failed` on `<test-run>`). The TP editor must be closed for `unity test`.
 - Shared PC: before every `unity test` or editor launch, check free memory (`Get-CimInstance Win32_OperatingSystem`), announce the heavy job to the other Claude sessions with SendMessage, note `Get-Process Unity` PIDs, and close any Unity process you started before reporting. Never write package files while `unity test` compiles.
 - Commit after each task from `PKG`: `git add -A && git commit -m "<plain message>"`. Do not push.
 
@@ -33,7 +33,7 @@
 - `JournalEntry` gains `string stage` (one of `idea, prototype, build, complete`; default `idea`) and `List<string> decisions` (short sentences, the choices made at this step). Both round-trip in Task 1 (`SaveLoad_RoundTrip_AllFields` covers them; `Create` sets `stage = "idea"`).
 - `KionjoPost.FromEntry` appends each non-empty decision (first sentence) to `overlays` after the beats, so decisions become on-screen text the same way the beats do (Task 3 test `FromEntry_DecisionsFollowBeats`).
 - Corrections found in the branch review (libass checked by rendering): `AssWriter.Escape` puts a word joiner (U+2060) after each backslash instead of doubling it (libass has no `\\` escape); the Overlay style's MarginV is `zone.Bottom` (overlays end at y 1250, outside the bottom zone; the earlier `height - zone.TitleBottom` put them inside it) and the Caption style's MarginV is `zone.Bottom + round(height * 0.12)`, above the overlays.
-- Execution order chosen by the maintainer: Tasks 1 to 9, then a thin Editor menu item "Tools/Kionjo/Build post from journal entry" (picks an `entry.json`, runs the Task 9 `PostJob` through `KionjoJobs`), then Task 12 acceptance with the AI Curator entry (idea to prototype; the Ghost girl is the second post), then Tasks 10 and 11, then the whole-branch review. No other scope change.
+- Execution order chosen by the maintainer: Tasks 1 to 9, then a thin Editor menu item "Tools/Kionjo/Build post from journal entry" (picks an `entry.json`, runs the Task 9 `PostJob` through `KionjoJobs`), then Task 12 acceptance with a real entry of the maintainer's, then Tasks 10 and 11, then the whole-branch review. No other scope change.
 
 ## Evaluation plan (every checkpoint)
 
@@ -50,7 +50,7 @@ Each row is checked when its task closes; the actual result goes into the ledger
 | Task 7 Caption | Exact caption layout, 5 hashtags, 2 sentences, collaborator line | `CaptionWriterTests` (4) | all pass | tests |
 | Task 8 Warnings | Every warning message exact | `PostWarningsTests` (one per message) | all pass | tests |
 | Task 9 Post job | Whole bundle on disk with real ffmpeg; missing media; refusal; silence warning | `PostJobTests` (5) plus ffprobe of `{Name}_9x16.mp4` | 1080x1920, 30 fps, h264 High, yuv420p, AAC 48 kHz stereo, duration within 0.2 s | tests |
-| Task 12 Curator post | The real post | ffprobe: 1080x1920, 30 fps, h264 High, AAC 48 kHz; `ebur128` integrated loudness -14 LUFS within 1.5 (only when there is sound); duration 20 to 45 s; hook event starts at 0.5 s in `post.ass`; all text events inside the safe zone (hook and cover in y 420 to 1500); cover 1080x1920 | all automatic checks pass | ffprobe (numbers); hook, pacing, text look and cover: the maintainer |
+| Task 12 acceptance post | The real post | ffprobe: 1080x1920, 30 fps, h264 High, AAC 48 kHz; `ebur128` integrated loudness -14 LUFS within 1.5 (only when there is sound); duration 20 to 45 s; hook event starts at 0.5 s in `post.ass`; all text events inside the safe zone (hook and cover in y 420 to 1500); cover 1080x1920 | all automatic checks pass | ffprobe (numbers); hook, pacing, text look and cover: the maintainer |
 | Task 10 Posts tab | Tab without storyboard, list order, story balance | `PostsTabTests` (3) plus the earlier window tests | all pass, trailer tab tests still pass | tests |
 | Task 11 Build view, docs | Hook buttons, live warnings, build button state; docs | `PostBuildViewTests` (3); editor pass by eye (preview frame with zones, grid) | all pass; window works by eye | tests; by eye: the builder, then the maintainer |
 | Final review | Correctness and requirement gaps on the whole branch | `/code-review` in a fresh context | findings fixed and re-tested | reviewer, then the maintainer |
@@ -126,7 +126,7 @@ Each row is checked when its task closes; the actual result goes into the ledger
   - `static class HookTemplates { string Fill(HookKind kind, JournalEntry e); }` with exact formats: Claim `"Nobody believes this is {X}."`, Promise `"This changes how you see {X}."`, Question `"Can {X}?"`, Pov `"POV: {X}"`, where `{X}` is the first non-empty of `e.achieved`, `e.trick`, `e.goal`, `e.title`, lowercased first letter, trailing period removed, cut to 6 words.
   - `static KionjoPost KionjoPost.FromEntry(JournalEntry e)`: one `PostItem` per media whose role is not `still`, in order (hook role first); `overlays` = non-empty of `making, achieved, hurdle, trick` as single sentences (text up to the first `.`); `hook` = `e.hookOptions[0]` when present, else `HookTemplates.Fill(HookKind.Question, e)`; `name` = `KionjoJournal.Slug(e.title)`; `coverTitle` = first 3 words of `e.title`, upper case.
 
-- [ ] **Step 1: Write failing tests**: `Fill_Question_UsesAchieved` (achieved `"A ghost refuse to turn round."` gives `"Can a ghost refuse to turn round?"`; the templates are mechanical, Bernard rewrites them), `Fill_CutsToSixWords`, `FromEntry_ItemsSkipStills_HookFirst`, `FromEntry_OverlaysFirstSentenceOnly`, `FromEntry_CoverTitleThreeWordsUpper` ("The ghost never turns round" gives `THE GHOST NEVER`).
+- [ ] **Step 1: Write failing tests**: `Fill_Question_UsesAchieved` (achieved `"A ghost refuse to turn round."` gives `"Can a ghost refuse to turn round?"`; the templates are mechanical, the maintainer rewrites them), `Fill_CutsToSixWords`, `FromEntry_ItemsSkipStills_HookFirst`, `FromEntry_OverlaysFirstSentenceOnly`, `FromEntry_CoverTitleThreeWordsUpper` ("The ghost never turns round" gives `THE GHOST NEVER`).
 - [ ] **Step 2: Run.** Expected: compile errors.
 - [ ] **Step 3: Implement** `KionjoPost.cs`.
 - [ ] **Step 4: Run.** Expected: pass.
@@ -200,7 +200,7 @@ Each row is checked when its task closes; the actual result goes into the ledger
     - `FfmpegCommand Cover(PostPlan p, string source, float time, string titleFile, KionjoBrandKit kit)`: `-ss {time} -i {source} -frames:v 1`, filter = fit as Crop, then `hue=s=0` when `kit.coverDesaturate`, `eq=brightness=-0.08`, then `drawtext=fontfile=title.ttf:textfile={titleFile}:expansion=none:fontcolor={kit.accentColour as 0xRRGGBB}:fontsize={round(H*0.075)}:x=(w-tw)/2:y=h*0.5-th/2`, output `cover.jpg` with `-q:v 2`.
     - `List<FfmpegCommand> Build(PostPlan p, string folder, string ffmpeg, string coverSource)`: segments, concat, audio with music, audio without music (only when music is set), render `{Name}_9x16.mp4` (burned, with music), `{Name}_nomusic_9x16.mp4` (burned, no music, only when music is set), `{Name}_clean_9x16.mp4` (not burned, with music), cover. Sets `Executable` and `WorkingDirectory` on all.
 
-- [ ] **Step 1: Write failing tests** (fake `IMediaInfo` returning fixed values): `FitFilter_Crop_16x9Source` (1920x1080, centre 0.5: exact string), `FitFilter_VerticalSource_NoCrop` (1080x1920 gives `scale=1080:1920,...`), `FitFilter_BlurFill_Exact`, `Segment_OutPastEnd_HoldsLastFrame` (tpad stop_duration equals D), `Build_PathWithSpacesAndBrackets_IsOneArgument` (source `D:/BERNARD/UNITY PROJECTS (GAMES)/Ghost look 1 - Pattern [v2].mp4` appears exactly once in `Args` as an element, and no filter string contains `UNITY PROJECTS`), `AudioGraph_ItemWithoutAudio_UsesSilence` (contains `anullsrc=r=48000:cl=stereo`), `AudioGraph_DuckWhenSpeech_HasSidechain`, `AudioGraph_NoSoundNoMusic_ReturnsNull`, `Build_NoMusic_SkipsNoMusicVariant` (no `_nomusic_` output), `PlanBuilder_LoopEnd_AppendsFirstHalfSecond`, `PlanBuilder_CaptionWords_ShiftedToFilmTime` (word at source 3.0 s in an item with inPoint 2.0 placed after a 4 s first item lands at 5.0).
+- [ ] **Step 1: Write failing tests** (fake `IMediaInfo` returning fixed values): `FitFilter_Crop_16x9Source` (1920x1080, centre 0.5: exact string), `FitFilter_VerticalSource_NoCrop` (1080x1920 gives `scale=1080:1920,...`), `FitFilter_BlurFill_Exact`, `Segment_OutPastEnd_HoldsLastFrame` (tpad stop_duration equals D), `Build_PathWithSpacesAndBrackets_IsOneArgument` (source `D:/Work/MY PROJECTS (GAMES)/Look 1 - Pattern [v2].mp4` appears exactly once in `Args` as an element, and no filter string contains `UNITY PROJECTS`), `AudioGraph_ItemWithoutAudio_UsesSilence` (contains `anullsrc=r=48000:cl=stereo`), `AudioGraph_DuckWhenSpeech_HasSidechain`, `AudioGraph_NoSoundNoMusic_ReturnsNull`, `Build_NoMusic_SkipsNoMusicVariant` (no `_nomusic_` output), `PlanBuilder_LoopEnd_AppendsFirstHalfSecond`, `PlanBuilder_CaptionWords_ShiftedToFilmTime` (word at source 3.0 s in an item with inPoint 2.0 placed after a 4 s first item lands at 5.0).
 - [ ] **Step 2: Run.** Expected: compile errors.
 - [ ] **Step 3: Implement** the three files.
 - [ ] **Step 4: Run.** Expected: pass.
@@ -310,7 +310,7 @@ Each row is checked when its task closes; the actual result goes into the ledger
 
 ### Task 12: Acceptance, a real post from the maintainer's own footage (not committed to the package)
 
-The maintainer's kit values, footage and journal entry are in their private notes (for SeedeXR: the private Baraza repo, `Design/Posts/Kionjo-Posts-Strategy.md`, section 8). Nothing from this task is committed to `PKG`.
+The maintainer's kit values, footage and journal entry are in their private notes. Nothing from this task is committed to `PKG`.
 
 - [ ] **Step 1: Brand kit** asset in TP (`Assets/Kionjo Posts/`) with the maintainer's values; logos converted to PNG.
 - [ ] **Step 2: Journal entry** drafted from the work's build log and commits: story type, owner, the six beats in plain words (no jargon, no dates), 3 to 5 clips by absolute path chosen for the strongest first frame, three hook options.

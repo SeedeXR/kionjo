@@ -50,13 +50,13 @@ namespace SeedeXR.Kionjo.Tests
         [Test]
         public void Build_PathWithSpacesAndBrackets_IsOneArgument()
         {
-            const string src = "D:/BERNARD/UNITY PROJECTS (GAMES)/Ghost look 1 - Pattern [v2].mp4";
+            const string src = "D:/Work/MY PROJECTS (GAMES)/Look 1 - Pattern [v2].mp4";
             var post = new KionjoPost { name = "ghost", hook = "Hook", items = { new PostItem { path = src } } };
             var plan = PostPlanBuilder.Build(post, new FakeInfo(), null);
             var cmds = PostCommandBuilder.Build(plan, "D:/out", "ffmpeg", PostCommandBuilder.Joined);
             var segment = cmds[0];
             Assert.AreEqual(1, segment.Args.Count(a => a == src));
-            Assert.AreEqual("01-ghost-look-1-pattern-v2", plan.Segments[0].Label);
+            Assert.AreEqual("01-look-1-pattern-v2", plan.Segments[0].Label);
             foreach (var c in cmds)
             {
                 Assert.AreEqual("D:/out", c.WorkingDirectory);
