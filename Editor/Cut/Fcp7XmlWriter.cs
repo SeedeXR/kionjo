@@ -105,7 +105,7 @@ namespace SeedeXR.Kionjo.EditorTools
             return sb.ToString();
         }
 
-        /// <summary>file://localhost/D:/BERNARD/UNITY%20PROJECTS%20(GAMES)/x.mp4</summary>
+        /// <summary>file://localhost/D:/Work/MY%20PROJECTS%20(GAMES)/x.mp4</summary>
         public static string PathUrl(string path)
         {
             var p = path.Replace('\\', '/');

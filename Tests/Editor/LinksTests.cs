@@ -62,6 +62,17 @@ namespace SeedeXR.Kionjo.Tests
             Assert.IsFalse(string.IsNullOrEmpty(note));
         }
 
+        /// <summary>The link count decides what is safe to delete: a lone file is 1, a hard-linked one 2.</summary>
+        [Test]
+        public void LinkCountCountsNames()
+        {
+            if (Application.platform != RuntimePlatform.WindowsEditor) Assert.Ignore("link counts are read on Windows only");
+            Assert.AreEqual(1, KionjoLinks.LinkCount(_src));
+            Assert.IsTrue(KionjoLinks.LinkOrCopy(_src, Dest, out var note), note);
+            Assert.AreEqual(2, KionjoLinks.LinkCount(_src));
+            Assert.AreEqual(2, KionjoLinks.LinkCount(Dest));
+        }
+
         /// <summary>A refresh must not re-copy an unchanged copy (gigabytes from another drive, on the main thread).</summary>
         [Test]
         public void UnchangedCopyIsNotCopiedAgain()

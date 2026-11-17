@@ -7,7 +7,7 @@ namespace SeedeXR.Kionjo.EditorTools
 {
     /// <summary>
     /// Voice line trimming by silence. -55 dB, never -35 dB: in trailer 1, -35 dB cut the tails of
-    /// words ("the Curator line felt cut short"). Trims only leading and trailing silence.
+    /// words ("the villain's line felt cut short"). Trims only leading and trailing silence.
     /// </summary>
     public static class SilenceDetect
     {

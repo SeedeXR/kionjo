@@ -33,7 +33,7 @@ namespace SeedeXR.Kionjo.Tests
         [Test]
         public void Json_RoundTrip_PreservesIdsAndOrder()
         {
-            _a.title = "Baraza";
+            _a.title = "Hero";
             var s1 = _a.AddShot();
             s1.name = "Crane";
             s1.voice.Add(new KionjoVoiceLine { subtitle = "Why here?", at = 0.5f });
@@ -41,7 +41,7 @@ namespace SeedeXR.Kionjo.Tests
             c.cardLines.Add("You will be judged by why.");
             int n = KionjoStoryboardJson.Import(_b, KionjoStoryboardJson.Export(_a), replace: true);
             Assert.AreEqual(2, n);
-            Assert.AreEqual("Baraza", _b.title);
+            Assert.AreEqual("Hero", _b.title);
             Assert.AreEqual(s1.id, _b.shots[0].id);
             Assert.AreEqual("Why here?", _b.shots[0].voice[0].subtitle);
             Assert.AreEqual("You will be judged by why.", _b.shots[1].cardLines[0]);

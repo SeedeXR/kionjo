@@ -25,7 +25,7 @@ Unity Package Manager > Add package from git URL:
 https://github.com/SeedeXR/kionjo.git
 ```
 
-To stay on a release, add its tag: `https://github.com/SeedeXR/kionjo.git#v0.2.0`.
+To stay on a release, add its tag: `https://github.com/SeedeXR/kionjo.git#v0.2.1`.
 
 Requirements:
 

@@ -79,6 +79,56 @@ namespace SeedeXR.Kionjo.Tests
             Assert.IsFalse(File.Exists(Path.Combine(v1, "post", "reel.mp4")));
         }
 
+        /// <summary>
+        /// Posted: older versions go, but nothing unique is lost. Links whose footage still exists and files the latest
+        /// version holds identically are deleted; briefs, recipes and any file found nowhere else move into latest/older/vNN.
+        /// </summary>
+        [Test]
+        public void PostedRemovesOlderVersionsWithoutLosingAnything()
+        {
+            var clean = typeof(PostFolder).GetMethod("CleanAfterPosted");
+            Assert.IsNotNull(clean, "PostFolder.CleanAfterPosted is missing");
+            var a = Footage("a.mp4");
+            var e = Entry(new JournalMedia { path = a });
+            var entry = PostFolder.EntryFolder(_posts, e);
+            var v1 = PostFolder.Next(entry);
+            PostFolder.Refresh(v1, e, _footage);
+            Directory.CreateDirectory(Path.Combine(v1, "post"));
+            Directory.CreateDirectory(Path.Combine(v1, "recipe"));
+            File.WriteAllBytes(Path.Combine(v1, "post", "cover.jpg"), new byte[] { 5 });
+            File.WriteAllText(Path.Combine(v1, "recipe", "commands.txt"), "ffmpeg");
+            // A copy whose original is gone: the only copy left of that footage.
+            File.WriteAllBytes(Path.Combine(v1, "materials", "lost.mp4"), new byte[] { 6, 6 });
+            var v2 = PostFolder.Next(entry);
+            PostFolder.Refresh(v2, e, _footage);
+
+            clean.Invoke(null, new object[] { entry, v2 });
+
+            Assert.IsFalse(Directory.Exists(v1), "the older version is still there");
+            Assert.IsTrue(File.Exists(a), "the footage behind a link must survive");
+            var older = Path.Combine(v2, "older", "v01");
+            Assert.IsTrue(File.Exists(Path.Combine(older, "BRIEF.md")));
+            Assert.IsTrue(File.Exists(Path.Combine(older, "recipe", "commands.txt")));
+            Assert.IsTrue(File.Exists(Path.Combine(older, "post", "cover.jpg")));
+            Assert.IsTrue(File.Exists(Path.Combine(older, "materials", "lost.mp4")), "a unique file was deleted");
+            Assert.IsFalse(File.Exists(Path.Combine(older, "materials", "a.mp4")), "a link whose footage exists needs no copy");
+            Assert.IsTrue(File.Exists(Path.Combine(v2, "materials", "a.mp4")));
+        }
+
+        /// <summary>A material that is a copy, not a link (its footage may be gone), is the only copy: a build never deletes it.</summary>
+        [Test]
+        public void PruneKeepsAnOnlyCopy()
+        {
+            var e = Entry();
+            var entry = PostFolder.EntryFolder(_posts, e);
+            var v1 = PostFolder.Next(entry);
+            Directory.CreateDirectory(Path.Combine(v1, "materials"));
+            File.WriteAllBytes(Path.Combine(v1, "materials", "lost.mp4"), new byte[] { 6, 6 });
+            var v2 = PostFolder.Next(entry);
+            PostFolder.PruneOlderVideos(entry, v2);
+            Assert.IsTrue(File.Exists(Path.Combine(v1, "materials", "lost.mp4")));
+        }
+
         [Test]
         public void NextCountsUp()
         {

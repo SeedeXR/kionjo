@@ -13,7 +13,7 @@ namespace SeedeXR.Kionjo.EditorTools
     [Icon("Packages/com.seedexr.kionjo/Editor/Icons/kionjo-asset.png")]
     public class KionjoStoryboard : ScriptableObject
     {
-        [Tooltip("Used in output file names, for example Baraza_Trailer_draft03.mp4.")]
+        [Tooltip("Used in output file names, for example My_Trailer_draft03.mp4.")]
         public string title = "Trailer";
         [Tooltip("Where takes, renders and cuts go. Relative to the project folder (outside Assets), or absolute.")]
         public string outputFolder = "Kionjo";

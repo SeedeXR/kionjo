@@ -33,7 +33,7 @@ editor:
 ```json
 {
   "storyboard": "Assets/Trailer/Storyboard.asset",
-  "title": "Baraza Trailer",
+  "title": "My Trailer",
   "isPlaying": true,
   "isRecording": false,
   "currentShot": "ab72ffac99ba4865805fe10b224a88a7",
@@ -167,7 +167,13 @@ Each step gets a post folder, `<output>/posts/<created>_<slug>/vNN/`:
 
 Materials and the brief refresh when the entry changes. The edit is rendered only on Build post (never by the
 watcher). A new build writes the next `vNN` and deletes the videos of the older ones (pictures, briefs and recipes
-stay; footage is never deleted).
+stay; footage is never deleted). Another post of the same step (a different name) is linked into the new `vNN`, so
+posts sit side by side. A material that is a copy rather than a link is never deleted by a build: it may be the only
+copy left.
+
+Mark as posted removes the older `vNN` folders without losing anything: a file is deleted only when its data
+survives elsewhere (a hard link whose footage still exists, or an identical file in the latest version); everything
+else (briefs, recipes, covers, a copy whose original is gone) moves to `<latest vNN>/older/vNN/`.
 
 ### Capture request
 
@@ -198,11 +204,19 @@ A request ends `dropped` when a later step of the feature exists, `pending` (wit
 under twice its need plus the floor (Preferences > Kionjo > Keep free) or another tool holds the heavy-work lock,
 and `failed` (with the reason) when the scene has no camera or the subject is not there.
 
+A scene that steps its own simulation (by hand, on its own clock) needs a driver, or it is filmed standing still or
+at the wrong speed. Put a MonoBehaviour that implements `SeedeXR.Kionjo.IKionjoCaptureDriver` in the scene (or add
+it at runtime): `CaptureBegin(fps)` runs once before frame 0 (turn off your own Update stepping, restart your
+timeline), `CaptureStep(dt)` once per captured frame before the rigs render (step by exactly `dt`, start sounds at
+their times), and `TryGetFocus(out centre, out radius)` may give the rigs the point to frame (a soft body's
+centroid) and a radius (0 keeps the size measured from the subject's renderers).
+
 ### Heavy-work lock
 
 `<lock folder>/heavy.lock` (Preferences > Kionjo, default `<user home>/.kionjo`) holds `{ owner, pid, gb, since }`
 of whoever runs heavy work. Kionjo takes it for captures. Create it with exclusive create, delete it when done; a
-lock whose `pid` is not running is stale and may be replaced.
+lock whose `pid` is not running, or whose process started after `since` (the pid was reused), is stale and may be
+replaced.
 
 ### For agents that build
 

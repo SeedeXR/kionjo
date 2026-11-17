@@ -12,21 +12,21 @@
 
 ## Global Constraints
 
-- Package root = repo root `D:\BERNARD\UNITY PROJECTS (GAMES)\kionjo` (call it `PKG`). Package id `com.seedexr.kionjo`, version `0.1.0`, `"unity": "6000.0"`, MIT, author SeedeXR.
-- Test project `D:\BERNARD\UNITY PROJECTS (GAMES)\Kionjo-TestProject` (call it `TP`), URP, references the package with `"com.seedexr.kionjo": "file:../../kionjo"` and lists it in `testables`. Kionjo never needs Baraza's editor; do not touch the Baraza repo.
-- Build and test only on editor 6000.0.70f1. Every `unity` call passes the project path explicitly (two editors may be open). `unity` is at `C:\Users\Seede Sr\AppData\Local\Unity\bin`; add it to PATH in every shell call.
+- Package root = repo root `<package folder>` (call it `PKG`). Package id `com.seedexr.kionjo`, version `0.1.0`, `"unity": "6000.0"`, MIT, author SeedeXR.
+- Test project `<test project>` (call it `TP`), URP, references the package with `"com.seedexr.kionjo": "file:../../kionjo"` and lists it in `testables`. Kionjo never needs Baraza's editor; do not touch the Baraza repo.
+- Build and test only on editor 6000.0.70f1. Every `unity` call passes the project path explicitly (two editors may be open). `unity` is at `<folder of the unity CLI>`; add it to PATH in every shell call.
 - Namespaces: `SeedeXR.Kionjo` (Runtime), `SeedeXR.Kionjo.EditorTools` (Editor), `SeedeXR.Kionjo.Tests` (tests), `SeedeXR.Kionjo.Agent` (bridge). Asmdefs: `SeedeXR.Kionjo`, `SeedeXR.Kionjo.Editor`, `SeedeXR.Kionjo.Tests`, `SeedeXR.Kionjo.Editor.Tests`, `SeedeXR.Kionjo.Agent.Editor`.
 - No hard dependency on Meta XR, OpenXR, XRI, Cinemachine, Recorder, Timeline or uGUI. Runtime asmdef has no references. Editor asmdef references only `SeedeXR.Kionjo`.
 - Writing rule (hard): NO em-dashes anywhere (code comments, UI strings, docs, commit messages). Use a colon, a comma or parentheses. No AI attribution in commits; plain messages, no trailers.
 - ffmpeg: every invocation is an `FfmpegCommand` (executable, argument list, working directory). Paths that appear inside a filtergraph are relative to the working directory. Never build a shell string for execution (only for `commands.txt`).
 - Tests: `[Test]` in `Tests/Editor` for pure code, `[UnityTest]` in `Tests/Runtime` for MonoBehaviours. Test files write under `Path.Combine(Path.GetTempPath(), "KionjoTests", TestContext.CurrentContext.Test.Name)` and delete it in `[TearDown]`.
-- Verify commands below are Git Bash. `UNITY` means `export PATH="$PATH:/c/Users/Seede Sr/AppData/Local/Unity/bin"; TP="D:/BERNARD/UNITY PROJECTS (GAMES)/Kionjo-TestProject"`. `unity test` exits 6 on failure, 0 on success, and writes NUnit XML; read the `total`/`passed`/`failed` attributes on the `<test-run>` element.
+- Verify commands below are Git Bash. `UNITY` means `export PATH="$PATH:<folder of the unity CLI>"; TP="<test project>"`. `unity test` exits 6 on failure, 0 on success, and writes NUnit XML; read the `total`/`passed`/`failed` attributes on the `<test-run>` element.
 - `unity test` needs the test project's editor closed (`unity close "$TP" --force` first if `unity status` lists it). Open it again with `unity open "$TP"` only for the CLI smoke checks that say so.
 - Commit after every task from `PKG` (`git add -A && git commit -m "<message>"`). First commit creates `main`. Do not push tonight.
 
 ## Review Focus
 
-1. Paths with spaces, parentheses and brackets (Bernard's project path has all three): an ffmpeg segment whose source is `D:/BERNARD/UNITY PROJECTS (GAMES)/x [1].mp4` must appear as one argument, unquoted, in `FfmpegCommand.Args`, and the `subtitles=` filter must name `subs.srt` relatively. Test pinned in Task 9.
+1. Paths with spaces, parentheses and brackets (the maintainer's project path has all three): an ffmpeg segment whose source is `D:/Work/MY PROJECTS (GAMES)/x [1].mp4` must appear as one argument, unquoted, in `FfmpegCommand.Args`, and the `subtitles=` filter must name `subs.srt` relatively. Test pinned in Task 9.
 2. An empty or single-frame take (Space pressed twice): `KionjoTakeData.Load` returns zero or one frame without throwing, `KionjoReplayer.Play` finishes on the first frame, the Shoot tab lists the take with "0.0 s". Tests pinned in Tasks 2 and 5.
 3. ffmpeg missing or exiting non-zero mid job: `CutJob` stops, keeps the folder, surfaces the last 20 stderr lines, no exception reaches `EditorApplication.update`. Test pinned in Task 11 with a bogus input path.
 4. A storyboard with no usable source for some shots (no take, no render, no capture): `CutPlanBuilder` skips them with a warning each, still builds the plan, and a storyboard of only cards still cuts. Tests pinned in Tasks 8 and 11.
@@ -61,7 +61,7 @@ Asmdefs (names above). Runtime: `references: []`, no platform limits. Editor: `r
 
 Run:
 ```bash
-UNITY; unity projects create Kionjo-TestProject --path "D:/BERNARD/UNITY PROJECTS (GAMES)" --editor-version 6000.0.70f1 --template com.unity.template.urp-blank --with-pipeline --no-cloud --non-interactive
+UNITY; unity projects create Kionjo-TestProject --path "<projects folder>" --editor-version 6000.0.70f1 --template com.unity.template.urp-blank --with-pipeline --no-cloud --non-interactive
 ```
 Expected: exit 0, folder `TP` exists with `Packages/manifest.json` and `ProjectSettings/ProjectVersion.txt` saying `6000.0.70f1`. If the template id is rejected, run `unity templates list --editor 6000.0.70f1 --no-pager` and pick the "Universal 3D" CORE entry.
 
@@ -221,7 +221,7 @@ Expected: exit 0, `TP/Assets/Kionjo Sample/KionjoSample.unity` exists, log conta
 - `public static class KionjoProcess { public sealed class Result { public int ExitCode; public string StdErrTail; /* last 20 lines */ public string StdOut; } public static Task<Result> RunAsync(FfmpegCommand cmd, CancellationToken ct, IProgress<float> progress = null, StreamWriter log = null); /* adds "-progress pipe:1 -nostats -v error -y" when Executable ends with ffmpeg; parses out_time_ms into progress 0..1 against ExpectedSeconds; stderr read asynchronously; cancel kills the process tree */ public static Result Run(FfmpegCommand cmd, int timeoutMs = 60000); /* synchronous helper for probes */ }`
 - `public interface IMediaProbe { float DurationSeconds(string path); /* -1 when unknown */ }` and `public sealed class FfprobeMediaProbe : IMediaProbe` using `ffprobe -v error -show_entries format=duration -of csv=p=0`.
 
-- [ ] **Step 1: Write failing tests**: `ToShellString_QuotesSpacesAndBrackets` (`Args = ["-i","D:/BERNARD/UNITY PROJECTS (GAMES)/x [1].mp4"]` gives `ffmpeg -i "D:/BERNARD/UNITY PROJECTS (GAMES)/x [1].mp4"`), `Args_KeepPathsAsSingleEntries`, `Locator_PrefersPreferencePath` (write a temp file named `ffmpeg.exe`, set `PreferredPath`, `FindFfmpeg` returns it; restore the pref in TearDown), `Locator_FindsVersionOfInstalledFfmpeg` (`TryGetVersion(FindFfmpeg())` true and starts with a digit), `Process_RunsFfmpegVersion_ExitZero` (`Args = ["-version"]`, `Run`, `ExitCode == 0`), `Process_Cancel_KillsLongRun` (`-f lavfi -i color=black:d=60 -f null -` with `-re` to slow it, cancel after 300 ms, task completes within 3 s), `Probe_Duration_OfLavfiGeneratedFile` (generate a 1.5 s black mp4 into temp with `KionjoProcess.Run`, `FfprobeMediaProbe.DurationSeconds` is 1.5 within 0.1).
+- [ ] **Step 1: Write failing tests**: `ToShellString_QuotesSpacesAndBrackets` (`Args = ["-i","D:/Work/MY PROJECTS (GAMES)/x [1].mp4"]` gives `ffmpeg -i "D:/Work/MY PROJECTS (GAMES)/x [1].mp4"`), `Args_KeepPathsAsSingleEntries`, `Locator_PrefersPreferencePath` (write a temp file named `ffmpeg.exe`, set `PreferredPath`, `FindFfmpeg` returns it; restore the pref in TearDown), `Locator_FindsVersionOfInstalledFfmpeg` (`TryGetVersion(FindFfmpeg())` true and starts with a digit), `Process_RunsFfmpegVersion_ExitZero` (`Args = ["-version"]`, `Run`, `ExitCode == 0`), `Process_Cancel_KillsLongRun` (`-f lavfi -i color=black:d=60 -f null -` with `-re` to slow it, cancel after 300 ms, task completes within 3 s), `Probe_Duration_OfLavfiGeneratedFile` (generate a 1.5 s black mp4 into temp with `KionjoProcess.Run`, `FfprobeMediaProbe.DurationSeconds` is 1.5 within 0.1).
 - [ ] **Step 2: Run EditMode tests.** Expected: fail.
 - [ ] **Step 3: Implement.** `ProcessStartInfo` with `UseShellExecute = false`, `CreateNoWindow = true`, `RedirectStandardOutput`, `RedirectStandardError`, `ArgumentList` filled from `Args`. Progress lines come on stdout (`out_time_ms=`), errors on stderr; both via `BeginOutputReadLine`/`BeginErrorReadLine`.
 - [ ] **Step 4: Run.** Expected: pass.
@@ -331,7 +331,7 @@ Expected: exit 0, `TP/Assets/Kionjo Sample/KionjoSample.unity` exists, log conta
 - `public static class KionjoIcons { public const string Folder = "Packages/com.seedexr.kionjo/Editor/Icons/"; public static Texture2D Window => EditorGUIUtility.IconContent(Folder + "kionjo.png").image as Texture2D; public static Texture2D Asset => AssetDatabase.LoadAssetAtPath<Texture2D>(Folder + "kionjo-asset.png"); }`
 - Design (spec section 8): on a 16 unit grid, a rounded rectangle outline from (1.5, 3.5) to (14.5, 12.5), corner radius 2.5, stroke 1.5; two filled circles radius 1.6 at (6, 8) and (10, 8). Light skin colour `#555555`, dark skin `#C4C4C4`, transparent background. The SVG holds exactly these shapes. `make_icons.py` draws them with Pillow at 8x and downsamples with LANCZOS to 16, 32, 64, 128.
 
-- [ ] **Step 1: Write the SVG and the Python script; run** `python "D:/BERNARD/UNITY PROJECTS (GAMES)/kionjo/Tools~/make_icons.py"`. Expected: the six PNGs exist; `python -c "from PIL import Image; print(Image.open(r'...kionjo@2x.png').size)"` prints `(32, 32)`.
+- [ ] **Step 1: Write the SVG and the Python script; run** `python "<package folder>/Tools~/make_icons.py"`. Expected: the six PNGs exist; `python -c "from PIL import Image; print(Image.open(r'...kionjo@2x.png').size)"` prints `(32, 32)`.
 - [ ] **Step 2: Write the failing test** `Icons_LoadFromPackage` (`KionjoIcons.Window` and `KionjoIcons.Asset` not null, `Asset.width == 64`).
 - [ ] **Step 3: Add `KionjoIcons.cs`, set the import settings** of the PNGs via a one-off: in the test project the package is read-only in the Project window but `.meta` files live in the package folder; create the `.meta` files by letting Unity import once (run the EditMode tests) and then confirm `textureType` is Editor GUI and Legacy GUI (`textureType: 2`) and `mipmaps` off in each `.meta`; edit the `.meta` files directly if not.
 - [ ] **Step 4: Run EditMode tests.** Expected: pass.
@@ -390,7 +390,7 @@ Expected: exit 0, `TP/Assets/Kionjo Sample/KionjoSample.unity` exists, log conta
 - [ ] **Step 1: Write the failing end to end test.** Run PlayMode. Expected: fail on the Cut tab pieces missing or compile.
 - [ ] **Step 2: Implement the Cut tab.**
 - [ ] **Step 3: Run both modes.** Expected: pass. Record the ffprobe duration in the ledger.
-- [ ] **Step 4: Update README** with Quick start (install, add Kionjo Recorder with Head and hands, add Kionjo Camera Source, Window > Kionjo, create storyboard, Shoot, Render, Cut), Requirements (Unity 6000.0, ffmpeg on PATH or in Preferences), a "What is generated where" table (spec 5.3), and the `.gitignore` advice. Update CHANGELOG `0.1.0` Added bullets. Write `Documentation~/HeadsetPass.md`: a 10 step manual script for Bernard (add recorder to the XR rig: Head = the center eye camera, LeftHand, RightHand roots; Play over Link; Kionjo window Shoot; Space twice for a 10 s take; unplug; Replay (expect "XR device active" warning gone); Render Preview; compare motion; then HD; report frame count and any judder). Mark every headset-dependent behaviour with "needs headset pass".
+- [ ] **Step 4: Update README** with Quick start (install, add Kionjo Recorder with Head and hands, add Kionjo Camera Source, Window > Kionjo, create storyboard, Shoot, Render, Cut), Requirements (Unity 6000.0, ffmpeg on PATH or in Preferences), a "What is generated where" table (spec 5.3), and the `.gitignore` advice. Update CHANGELOG `0.1.0` Added bullets. Write `Documentation~/HeadsetPass.md`: a 10 step manual script for the maintainer (add recorder to the XR rig: Head = the center eye camera, LeftHand, RightHand roots; Play over Link; Kionjo window Shoot; Space twice for a 10 s take; unplug; Replay (expect "XR device active" warning gone); Render Preview; compare motion; then HD; report frame count and any judder). Mark every headset-dependent behaviour with "needs headset pass".
 - [ ] **Step 5: Commit** `"Cut tab, Tier 1 end to end test, README quick start, headset pass script"`.
 
 **Tier 1 gate:** all EditMode and PlayMode tests pass on 6000.0.70f1; the end to end mp4 plays (`ffprobe` reports video and audio streams); the window opens via the CLI smoke. Write the ledger entry "Tier 1 complete" with both XML paths.
@@ -463,8 +463,8 @@ Expected: exit 0, `TP/Assets/Kionjo Sample/KionjoSample.unity` exists, log conta
 
 **Interfaces:** `public static class Fcp7XmlWriter { public static string Write(CutPlan plan, string sequenceName, string cutFolder); }` producing `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE xmeml><xmeml version="5"><sequence id="seq1"><name/><duration>{frames}</duration><rate><timebase>{fps}</timebase><ntsc>FALSE</ntsc></rate><media><video><format><samplecharacteristics><width/><height/><pixelaspectratio>square</pixelaspectratio><rate>...</rate></samplecharacteristics></format><track>{clipitems}</track></video><audio><track>{voice}</track><track>{music}</track><track>{sfx}</track></audio></media></sequence></xmeml>`. Video clipitems reference the source file for Video segments (`in/out` = source frames, `start/end` = film frames) and the generated `seg/*.mp4` for cards and images (in 0). Audio clipitems reference the cue files with `in = trimIn frames`. Each `<file id="file-N">` carries `<name>`, `<pathurl>file://localhost/{path with forward slashes, URI escaped, drive like D:}</pathurl>`, `<rate>`, `<duration>`, `<media><video/></media>` or `<audio><channelcount>2</channelcount></audio>`. Frames = `Mathf.RoundToInt(seconds * fps)`.
 
-- [ ] **Step 1: Write failing tests**: `Write_IsWellFormedXml` (`XDocument.Parse`), `Video_ClipItem_FrameMath` (segment in 0.5 dur 6 at film 7.5 at 30 fps: in 15, out 195, start 225, end 405), `Card_References_SegFile`, `PathUrl_EscapesSpacesAndParentheses` (`D:/BERNARD/UNITY PROJECTS (GAMES)/x.mp4` gives `file://localhost/D:/BERNARD/UNITY%20PROJECTS%20(GAMES)/x.mp4`), `Audio_Tracks_InOrderVoiceMusicSfx`.
-- [ ] **Step 2: Run.** Expected: fail. **Step 3: Implement.** **Step 4: Run.** Expected: pass. Note in the ledger: "XML import into Premiere: Bernard".
+- [ ] **Step 1: Write failing tests**: `Write_IsWellFormedXml` (`XDocument.Parse`), `Video_ClipItem_FrameMath` (segment in 0.5 dur 6 at film 7.5 at 30 fps: in 15, out 195, start 225, end 405), `Card_References_SegFile`, `PathUrl_EscapesSpacesAndParentheses` (`D:/Work/MY PROJECTS (GAMES)/x.mp4` gives `file://localhost/D:/Work/MY%20PROJECTS%20(GAMES)/x.mp4`), `Audio_Tracks_InOrderVoiceMusicSfx`.
+- [ ] **Step 2: Run.** Expected: fail. **Step 3: Implement.** **Step 4: Run.** Expected: pass. Note in the ledger: "XML import into Premiere: the maintainer".
 - [ ] **Step 5: Commit** `"FCP7 XML timeline export beside every draft"`.
 
 ### Task 24: Animatic
@@ -552,7 +552,7 @@ Expected: exit 0, `TP/Assets/Kionjo Sample/KionjoSample.unity` exists, log conta
 - [ ] Run both test modes one final time; put the two XML summaries in the ledger.
 - [ ] Update `CHANGELOG.md` with what landed; update `README.md` status line.
 - [ ] Commit `"Session close: changelog and readme"`.
-- [ ] Write the morning report at `Documentation~/Design/progress.md` top block: tasks done with hashes, tests passed per mode, what is unverified (headset pass, Premiere import, dark skin by eye, `-nographics` route used), the two screenshots if taken, and the three decisions most worth Bernard's eyes (decisions 3, 4 and 12 in the spec).
+- [ ] Write the morning report at `Documentation~/Design/progress.md` top block: tasks done with hashes, tests passed per mode, what is unverified (headset pass, Premiere import, dark skin by eye, `-nographics` route used), the two screenshots if taken, and the three decisions most worth the maintainer's eyes (decisions 3, 4 and 12 in the spec).
 
 ## Self-review notes (planner, 2026-10-23)
 

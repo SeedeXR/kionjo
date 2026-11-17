@@ -6,7 +6,7 @@ Prints JSON: {"words": [{"w": "Human,", "s": 0.12, "e": 0.41}, ...]}
 Exits 3 with {"error": "..."} when faster-whisper is not installed.
 
 The audio is decoded by ffmpeg into 16 kHz mono float32 and handed to faster-whisper as an
-array: decoding through PyAV failed on a version mismatch in Baraza's trailer 1.
+array: decoding through PyAV failed on a version mismatch in the first trailer it was built for.
 """
 import argparse
 import json

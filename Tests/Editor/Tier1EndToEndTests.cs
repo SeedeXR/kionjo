@@ -27,7 +27,7 @@ namespace SeedeXR.Kionjo.Tests
             Directory.CreateDirectory(_dir);
             _sb = ScriptableObject.CreateInstance<KionjoStoryboard>();
             _sb.outputFolder = _dir;
-            _sb.title = "Baraza Test";
+            _sb.title = "Hero Test";
         }
 
         [TearDown]
@@ -78,7 +78,7 @@ namespace SeedeXR.Kionjo.Tests
             var job = new CutJob(plan, folder, FfmpegLocator.FindFfmpeg());
             Assert.IsTrue(job.RunAsync(CancellationToken.None).Wait(180000), "cut did not finish in 3 minutes");
             Assert.IsFalse(job.Failed, job.Error);
-            StringAssert.EndsWith("Baraza_Test_draft01.mp4", job.OutputMp4);
+            StringAssert.EndsWith("Hero_Test_draft01.mp4", job.OutputMp4);
             Assert.AreEqual(3.5f, new FfprobeMediaProbe().DurationSeconds(job.OutputMp4), 0.2f);
 
             var probe = KionjoProcess.Run(new FfmpegCommand { Executable = FfmpegLocator.FindFfprobe() }

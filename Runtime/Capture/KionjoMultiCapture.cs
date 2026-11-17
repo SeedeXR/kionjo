@@ -46,6 +46,7 @@ namespace SeedeXR.Kionjo
         readonly List<(string rig, Camera cam, KionjoFrameCapture capture)> _rigs = new();
         readonly KionjoMultiCaptureResult _result = new();
         KionjoAudioCapture _audio;
+        readonly List<IKionjoCaptureDriver> _drivers = new();
         Vector3 _centre;
         float _size;
         int _frame, _finished, _stillEvery;
@@ -61,6 +62,10 @@ namespace SeedeXR.Kionjo
             int frames = Mathf.CeilToInt(seconds * fps);
             _stillEvery = stillsEvery > 0f ? Mathf.Max(1, Mathf.RoundToInt(stillsEvery * fps)) : 0;
             _first = true;
+            // Scenes that step their own simulation get to start it before frame 0 and step it once per frame.
+            _drivers.Clear();
+            _drivers.AddRange(FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).OfType<IKionjoCaptureDriver>());
+            foreach (var d in _drivers) d.CaptureBegin(fps);
             Track(0f);
             foreach (var rig in rigs.Distinct())
             {
@@ -94,6 +99,7 @@ namespace SeedeXR.Kionjo
         {
             if (!_running) return;
             float dt = fps > 0f ? 1f / fps : Time.deltaTime;
+            foreach (var d in _drivers) d.CaptureStep(dt);
             Track(dt);
             Place(Mathf.Clamp01(_frame / Mathf.Max(1f, seconds * fps - 1f)));
             if (_stillEvery > 0 && _frame % _stillEvery == 0)
@@ -122,6 +128,13 @@ namespace SeedeXR.Kionjo
                 target = b.center;
                 _size = Mathf.Max(_size, b.extents.magnitude);
             }
+            foreach (var d in _drivers)
+                if (d.TryGetFocus(out var focus, out var radius))
+                {
+                    target = focus;
+                    if (radius > 0f) _size = Mathf.Max(_size, radius);
+                    break;
+                }
             _size = Mathf.Max(_size, 0.1f);
             if (_first) _centre = target;
             else _centre += (target - _centre) * (1f - Mathf.Exp(-dt / 0.5f));
