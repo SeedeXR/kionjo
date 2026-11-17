@@ -59,7 +59,7 @@ namespace SeedeXR.Kionjo.EditorTools
                 bindItem = (el, i) =>
                 {
                     var e = _entries[i];
-                    ((Label)el).text = $"{e.title}\n{e.project} · {(string.IsNullOrEmpty(e.story) ? "no story" : e.story)} · {e.status}";
+                    ((Label)el).text = $"{(KionjoWatcher.IsNew(e.Folder) ? "● " : "")}{e.title}\n{e.project} · {(string.IsNullOrEmpty(e.story) ? "no story" : e.story)} · {e.status}";
                     el.EnableInClassList("kionjo-bad", KionjoJournal.Missing(e).Any());
                 },
             };
@@ -88,6 +88,9 @@ namespace SeedeXR.Kionjo.EditorTools
             split.Add(scroll);
             Add(split);
             _detail.style.display = DisplayStyle.None; // filled by Refresh when the tab is shown
+            // New progress seen by the watcher shows up while the tab is open.
+            RegisterCallback<AttachToPanelEvent>(_ => KionjoWatcher.Changed += Refresh);
+            RegisterCallback<DetachFromPanelEvent>(_ => KionjoWatcher.Changed -= Refresh);
         }
 
         static KionjoBrandKit Kit => KionjoPostsSettings.instance.ActiveKit;
@@ -117,6 +120,7 @@ namespace SeedeXR.Kionjo.EditorTools
             var e = Selected;
             _detail.style.display = e == null ? DisplayStyle.None : DisplayStyle.Flex;
             if (e == null) return;
+            if (KionjoWatcher.MarkSeen(e.Folder)) _list.RefreshItems();
             _entryView.Bind(e, Kit);
             _buildView.Bind(e, Kit);
         }
