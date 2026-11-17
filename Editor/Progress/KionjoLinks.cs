@@ -20,6 +20,37 @@ namespace SeedeXR.Kionjo.EditorTools
         [DllImport("libc", SetLastError = true)]
         static extern int link(string existing, string newFile);
 
+        // BY_HANDLE_FILE_INFORMATION exactly: FILETIME is two DWORDs on a 4-byte boundary. A long here would be
+        // 8-aligned, add padding Windows does not have, and shift every later field (links read as garbage).
+        [StructLayout(LayoutKind.Sequential)]
+        struct FileInfoByHandle
+        {
+            public uint attributes;
+            public uint createdLow, createdHigh, accessedLow, accessedHigh, writtenLow, writtenHigh;
+            public uint volumeSerial, sizeHigh, sizeLow, links, indexHigh, indexLow;
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool GetFileInformationByHandle(Microsoft.Win32.SafeHandles.SafeFileHandle file, out FileInfoByHandle info);
+
+        /// <summary>
+        /// How many names the file's data has (2 or more: deleting this name keeps the data). 0 when unknown
+        /// (not Windows, or unreadable): callers must then treat the file as the only copy.
+        /// </summary>
+        public static int LinkCount(string path)
+        {
+            if (Application.platform != RuntimePlatform.WindowsEditor) return 0;
+            try
+            {
+                using var f = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                return GetFileInformationByHandle(f.SafeFileHandle, out var info) ? (int)info.links : 0;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
         /// <summary>Test seam: true when destination is now a hard link to source.</summary>
         internal static Func<string, string, bool> TryLink = HardLink;
 

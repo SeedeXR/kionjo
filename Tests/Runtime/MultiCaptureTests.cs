@@ -102,6 +102,57 @@ namespace SeedeXR.Kionjo.Tests
             Assert.IsFalse(Directory.GetFiles(_dir).Any(f => f.EndsWith(".partial.mp4")));
         }
 
+        class SteppedScene : MonoBehaviour, IKionjoCaptureDriver
+        {
+            public int begun, steps, asked;
+            public void CaptureBegin(float fps) => begun++;
+            public void CaptureStep(float dt) => steps++;
+            public bool TryGetFocus(out Vector3 centre, out float radius)
+            {
+                asked++;
+                centre = new Vector3(0f, 1f, 0f);
+                radius = 0f;
+                return true;
+            }
+        }
+
+        /// <summary>A scene that steps its own simulation is started once and stepped once per captured frame.</summary>
+        [UnityTest]
+        public IEnumerator DriverIsSteppedEveryFrame()
+        {
+            var ffmpeg = FrameCaptureTests.FindExe("ffmpeg");
+            if (ffmpeg == null) Assert.Ignore("ffmpeg is not on PATH");
+            _root = new GameObject("Capture Scene");
+            var cam = new GameObject("Main Camera").AddComponent<Camera>();
+            cam.transform.SetParent(_root.transform);
+            cam.transform.position = new Vector3(0f, 1f, -5f);
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.transform.SetParent(_root.transform);
+            var driver = _root.AddComponent<SteppedScene>();
+            var capture = new GameObject("Capture").AddComponent<KionjoMultiCapture>();
+            capture.subject = cube.transform;
+            capture.main = cam;
+            capture.rigs = new[] { "main" };
+            capture.seconds = 0.2f;
+            capture.fps = 30f;
+            capture.stillsEvery = 0f;
+            capture.outFolder = _dir;
+            capture.baseName = "stepped";
+            capture.ffmpeg = ffmpeg;
+            capture.encoderArgs = new[] { "-c:v", "libx264", "-preset", "ultrafast" };
+            KionjoMultiCaptureResult result = null;
+            capture.Done += r => result = r;
+            capture.Begin();
+            for (int i = 0; i < 300 && result == null; i++) yield return null;
+
+            Assert.IsNotNull(result, "capture did not finish");
+            Assert.IsTrue(result.ok, result.error);
+            Assert.AreEqual(1, driver.begun);
+            Assert.GreaterOrEqual(driver.steps, result.frames, "a captured frame was not stepped");
+            Assert.LessOrEqual(driver.steps, result.frames + 1);
+            Assert.Greater(driver.asked, 0, "the driver's focus was never asked");
+        }
+
         /// <summary>A capture whose object goes away (a scene load) must still report, or Play mode and the lock never end.</summary>
         [UnityTest]
         public IEnumerator DestroyedCaptureStillReportsDone()

@@ -85,6 +85,45 @@ namespace SeedeXR.Kionjo.EditorTools
         }
 
         /// <summary>
+        /// After a post is marked posted: every vNN other than keepVersionFolder goes, without losing anything
+        /// unique. A file is deleted only when its data survives elsewhere: a hard link with another name (the
+        /// footage), or an identical file (same relative path, size and time) in keepVersionFolder. Everything else
+        /// (briefs, recipes, covers, a copy whose original is gone) moves to keepVersionFolder/older/vNN/.
+        /// Returns the number of files moved.
+        /// </summary>
+        public static int CleanAfterPosted(string entryFolder, string keepVersionFolder)
+        {
+            int moved = 0;
+            var keep = Path.GetFullPath(keepVersionFolder ?? "").TrimEnd('/', '\\');
+            foreach (var (dir, n) in Versions(entryFolder).ToList())
+            {
+                var full = Path.GetFullPath(dir).TrimEnd('/', '\\');
+                if (string.Equals(full, keep, StringComparison.OrdinalIgnoreCase)) continue;
+                var older = Path.Combine(keep, "older", Path.GetFileName(full));
+                foreach (var f in Directory.GetFiles(full, "*", SearchOption.AllDirectories))
+                {
+                    var rel = f.Substring(full.Length + 1);
+                    var twin = Path.Combine(keep, rel);
+                    bool survives = KionjoLinks.LinkCount(f) > 1
+                        || (File.Exists(twin) && new FileInfo(twin).Length == new FileInfo(f).Length && File.GetLastWriteTimeUtc(twin) == File.GetLastWriteTimeUtc(f));
+                    if (survives)
+                    {
+                        File.Delete(f);
+                        continue;
+                    }
+                    var to = Path.Combine(older, rel);
+                    Directory.CreateDirectory(Path.GetDirectoryName(to));
+                    if (File.Exists(to)) File.Delete(to);
+                    File.Move(f, to);
+                    moved++;
+                }
+                // Only folders are left; a file still here (it could not be moved) keeps its version folder.
+                if (Directory.GetFiles(full, "*", SearchOption.AllDirectories).Length == 0) Directory.Delete(full, true);
+            }
+            return moved;
+        }
+
+        /// <summary>
         /// Deletes the videos in every vNN of the entry other than keepVersionFolder (pictures, briefs and
         /// recipes stay). Other posts' outputs (a name keepVersionFolder's post/ or capcut/ does not have) are
         /// first linked into it, so different posts of one step sit side by side in the latest version.
@@ -110,9 +149,15 @@ namespace SeedeXR.Kionjo.EditorTools
             foreach (var (dir, _) in older)
             {
                 var materials = Path.GetFullPath(Path.Combine(dir, Materials));
+                var kept = Path.GetFullPath(Path.Combine(dir, "older"));
                 foreach (var f in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
                 {
                     if (!VideoExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())) continue;
+                    // Never lose the only copy: older/ holds files kept on purpose, and a material that is not a hard
+                    // link (a copy, perhaps of footage that is gone) stays; Kionjo's own outputs are rebuildable.
+                    var full = Path.GetFullPath(f);
+                    if (full.StartsWith(kept, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (full.StartsWith(materials, StringComparison.OrdinalIgnoreCase) && KionjoLinks.LinkCount(f) <= 1) continue;
                     // ponytail: files under materials/ count as links (normally they are); a copied one frees disk uncounted.
                     if (!Path.GetFullPath(f).StartsWith(materials, StringComparison.OrdinalIgnoreCase)) freed += new FileInfo(f).Length;
                     File.Delete(f);

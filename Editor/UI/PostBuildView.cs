@@ -297,6 +297,9 @@ namespace SeedeXR.Kionjo.EditorTools
                 _post.postedUrl = url.value;
                 _e.status = "Posted";
                 KionjoJournal.SaveEdited(_e);
+                // Older versions go; anything found nowhere else moves into this version's older/ folder.
+                var latest = LatestFolder(_e);
+                if (latest != null) PostFolder.CleanAfterPosted(Path.GetDirectoryName(latest), latest);
                 RefreshAfter();
             }) { name = "post-mark-posted", text = _post.posted ? "Posted" : "Mark as posted", tooltip = "Records that you posted it yourself in the app. Kionjo never posts." });
             _after.Add(row);

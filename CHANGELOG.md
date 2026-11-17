@@ -3,6 +3,20 @@
 All notable changes to Kionjo are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-11-17
+
+### Added
+
+- `IKionjoCaptureDriver`: a scene that steps its own simulation is started before frame 0, stepped once per
+  captured frame and can tell the rigs what to frame.
+- Mark as posted removes the step's older versions without losing anything: a file is deleted only when its data
+  survives elsewhere; the rest moves to `<latest>/older/vNN/`.
+
+### Fixed
+
+- A build no longer deletes a material that is a copy (it may be the only one left).
+- Design notes and tests use neutral names and paths.
+
 ## [0.2.0] - 2026-11-17
 
 ### Added
