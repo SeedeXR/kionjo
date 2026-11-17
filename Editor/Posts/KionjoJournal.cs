@@ -44,6 +44,14 @@ namespace SeedeXR.Kionjo.EditorTools
         /// <summary>Draft, Ready or Posted.</summary>
         public string status = "Draft";
         public List<KionjoPost> posts = new();
+        /// <summary>The arc this step belongs to (for example "hero"); a later entry of the same feature supersedes it.</summary>
+        public string feature;
+        /// <summary>Where the version lives (branch@commit or a tag). Information only; Kionjo never checks it out.</summary>
+        public string version;
+        /// <summary>Free Markdown from the agent for whoever edits the post; copied into the brief as is.</summary>
+        public string brief;
+        /// <summary>Captures of this step: the backlog.</summary>
+        public List<KionjoCaptureRequest> captures = new();
         [NonSerialized] public string Folder;
     }
 
@@ -136,12 +144,35 @@ namespace SeedeXR.Kionjo.EditorTools
                 e.media ??= new List<JournalMedia>();
                 e.hookOptions ??= new List<string>();
                 e.posts ??= new List<KionjoPost>();
+                e.captures ??= new List<KionjoCaptureRequest>();
+                foreach (var c in e.captures)
+                {
+                    c.rigs ??= new List<string>();
+                    c.outputs ??= new List<string>();
+                }
                 return e;
             }
             catch (Exception ex)
             {
                 error = $"{file} could not be read: {ex.Message}";
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Load the entry as it is on disk now, apply change, save: one writer at a time, so text another
+        /// writer saved in between is kept. Null when the folder holds no readable entry.
+        /// </summary>
+        public static JournalEntry Update(string folder, Action<JournalEntry> change)
+        {
+            if (string.IsNullOrEmpty(folder) || !File.Exists(Path.Combine(folder, FileName))) return null;
+            lock (SaveLock)
+            {
+                var e = Load(folder, out _);
+                if (e == null) return null;
+                change(e);
+                Save(e);
+                return e;
             }
         }
 

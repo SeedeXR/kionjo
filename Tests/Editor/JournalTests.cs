@@ -124,5 +124,53 @@ namespace SeedeXR.Kionjo.Tests
             Assert.AreEqual(1, missing.Count);
             Assert.AreEqual("D:/nope/x.mp4", missing[0].path);
         }
+
+        [Test]
+        public void ProgressFieldsRoundTrip()
+        {
+            var e = KionjoJournal.Create(_dir, "Hero", "Game", Day);
+            e.feature = "hero";
+            e.version = "main@abc123";
+            e.brief = "## Why\nBecause.";
+            e.captures.Add(new KionjoCaptureRequest { scene = "Assets/S.unity", rigs = new List<string> { "main", "wide" }, label = "v3" });
+            KionjoJournal.Save(e);
+            var back = KionjoJournal.Load(e.Folder, out var error);
+            Assert.IsNull(error);
+            Assert.AreEqual(("hero", "main@abc123", "## Why\nBecause."), (back.feature, back.version, back.brief));
+            Assert.AreEqual(1, back.captures.Count);
+            var c = back.captures[0];
+            Assert.AreEqual(("Assets/S.unity", "v3", "pending"), (c.scene, c.label, c.state));
+            CollectionAssert.AreEqual(new[] { "main", "wide" }, c.rigs);
+            Assert.AreEqual(KionjoCaptureRequest.States.Pending, c.state);
+        }
+
+        [Test]
+        public void OldEntryLoadsWithEmptyCaptures()
+        {
+            var folder = Path.Combine(_dir, "2026-11-08-old");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, "entry.json"),
+                "{\"id\":\"x\",\"created\":\"2026-11-08\",\"title\":\"Old\",\"stage\":\"idea\",\"media\":[],\"status\":\"Draft\"}");
+            var back = KionjoJournal.Load(folder, out var error);
+            Assert.IsNull(error);
+            Assert.IsNotNull(back.captures);
+            Assert.AreEqual(0, back.captures.Count);
+            Assert.IsTrue(string.IsNullOrEmpty(back.feature));
+        }
+
+        [Test]
+        public void UpdateKeepsOtherWriterFields()
+        {
+            var a = KionjoJournal.Create(_dir, "Hero", "Game", Day);
+            var other = KionjoJournal.Load(a.Folder, out _);
+            other.achieved = "Agent text";
+            KionjoJournal.Save(other);
+            var saved = KionjoJournal.Update(a.Folder, e => e.media.Add(new JournalMedia { path = "x.mp4" }));
+            Assert.IsNotNull(saved);
+            var back = KionjoJournal.Load(a.Folder, out _);
+            Assert.AreEqual("Agent text", back.achieved);
+            Assert.AreEqual(1, back.media.Count);
+            Assert.IsNull(KionjoJournal.Update(Path.Combine(_dir, "nothing-here"), e => { }));
+        }
     }
 }
