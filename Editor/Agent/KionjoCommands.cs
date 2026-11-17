@@ -195,5 +195,22 @@ namespace SeedeXR.Kionjo.Agent
             w.Rebuild();
             return new { ok = true, message = $"Imported {n} shot(s){(replace ? ", replacing the storyboard" : "")}." };
         }
+
+        [CliCommand(Group, "capture", "Film a journal step now: one Play mode run from several frame-locked rigs, with sound and stills. Returns at once; the result is written to <request>.result.json and the entry.", Tags = new[] { "kionjo" })]
+        public static object Capture([CliArg("request", "Capture request JSON file (see the agent guide, Progress).", Required = true)] string request)
+        {
+            if (!File.Exists(request)) return Fail($"No file {request}.");
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return Fail("Leave Play mode first; the capture enters Play mode itself.");
+            KionjoCaptureRequest r;
+            try
+            {
+                r = KionjoCapture.RunFile(request);
+            }
+            catch (System.Exception e) when (e is IOException or System.ArgumentException)
+            {
+                return Fail($"Could not read {request} as a capture request: {e.Message}");
+            }
+            return new { ok = r.state != KionjoCaptureRequest.States.Failed && r.state != KionjoCaptureRequest.States.Dropped, state = r.state, reason = r.reason, result = request + ".result.json" };
+        }
     }
 }
