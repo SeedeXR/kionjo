@@ -50,7 +50,8 @@ namespace SeedeXR.Kionjo.EditorTools
             _words = words;
             if (string.IsNullOrEmpty(p.id)) p.id = Guid.NewGuid().ToString("N").Substring(0, 8);
             if (string.IsNullOrWhiteSpace(p.name)) p.name = KionjoJournal.Slug(e.title);
-            Folder = Path.Combine(postsRoot, KionjoJournal.Slug(e.title), p.id);
+            // One vNN per build of the entry; the build after it supersedes this one's videos.
+            Folder = PostFolder.Next(PostFolder.EntryFolder(postsRoot, e));
             Title = $"Post {p.name}";
             _hasKit = kit != null;
             _kitName = _hasKit ? kit.kitName : "";
@@ -94,6 +95,7 @@ namespace SeedeXR.Kionjo.EditorTools
             // ponytail: transcription runs on the calling thread (cached per file); move it off when captions become common.
             if (_post.items.Any(i => i.captionSpeech) && plan.CaptionWords.Count == 0)
                 Warnings.Add("No captions: the speech could not be transcribed (needs Python with faster-whisper, Preferences > Kionjo).");
+            PostFolder.Refresh(Folder, _entry, null);
             string ass = AssWriter.Write(plan.Width, plan.Height, plan.Texts, plan.CaptionWords, _hasKit ? _kit : null);
             var commands = PostCommandBuilder.Build(plan, Folder, _ffmpeg, PostCommandBuilder.Joined);
 
@@ -113,8 +115,9 @@ namespace SeedeXR.Kionjo.EditorTools
             File.WriteAllText(Path.Combine(Folder, "caption.txt"), _caption, utf8);
             var recipe = new Recipe { entryId = _entry.id, post = _post, kitName = _kitName, commands = commands.Select(c => c.ToShellString()).ToList() };
             File.WriteAllText(Path.Combine(Folder, "post.json"), JsonUtility.ToJson(recipe, true), utf8);
-            var script = new StringBuilder("# Kionjo post: run from the post folder\n");
-            script.Append("cd ").Append(FfmpegCommand.Quote(Folder.Replace('\\', '/'))).Append('\n');
+            var script = new StringBuilder("# Kionjo post: run from the recipe folder (it holds the inputs); Kionjo sorts the outputs into post/ and capcut/\n");
+            script.Append("cd ").Append(FfmpegCommand.Quote(Path.Combine(Folder, PostFolder.Recipe).Replace('\\', '/'))).Append('\n');
+            script.Append("mkdir ").Append(PostCommandBuilder.SegFolder).Append('\n');
             foreach (var c in commands) script.Append(c.ToShellString()).Append('\n');
             File.WriteAllText(Path.Combine(Folder, "commands.txt"), script.ToString(), utf8);
 
@@ -136,9 +139,9 @@ namespace SeedeXR.Kionjo.EditorTools
                     if (cmd.Args.LastOrDefault() == PostCommandBuilder.Audio) CheckSilence(plan);
                 }
 
-            var srt = Path.Combine(Folder, PostCommandBuilder.Srt);
-            if (File.Exists(srt)) File.Copy(srt, Path.Combine(Folder, plan.Name + ".srt"), true);
-            OutputMp4 = Path.Combine(Folder, PostCommandBuilder.MainFile(plan));
+            Sort(plan);
+            OutputMp4 = Path.Combine(Folder, PostFolder.Post, PostCommandBuilder.MainFile(plan));
+            PostFolder.PruneOlderVideos(Path.GetDirectoryName(Folder), Folder);
             _post.posted = false;
             // Merge into the entry as it is on disk now, so edits made during the build are kept.
             var target = string.IsNullOrEmpty(_entry.Folder) ? _entry : KionjoJournal.Load(_entry.Folder, out _) ?? _entry;
@@ -165,6 +168,43 @@ namespace SeedeXR.Kionjo.EditorTools
                 if (d < 1f) continue;
                 Warnings.Add($"Silence of {d.ToString("0.0", CultureInfo.InvariantCulture)} s at {r.Start.ToString("0.0", CultureInfo.InvariantCulture)} s: keep a sound bed under the picture.");
             }
+        }
+
+        /// <summary>
+        /// After a build: the edit into post/, the clean edit and subtitles into capcut/, intermediates
+        /// deleted, every other working file into recipe/. BRIEF.md and materials/ stay where they are.
+        /// </summary>
+        void Sort(PostPlan plan)
+        {
+            string Into(string sub)
+            {
+                var d = Path.Combine(Folder, sub);
+                Directory.CreateDirectory(d);
+                return d;
+            }
+
+            void Move(string name, string sub, string newName = null)
+            {
+                var from = Path.Combine(Folder, name);
+                if (!File.Exists(from)) return;
+                var to = Path.Combine(Into(sub), newName ?? name);
+                if (File.Exists(to)) File.Delete(to);
+                File.Move(from, to);
+            }
+
+            Move(PostCommandBuilder.MainFile(plan), PostFolder.Post);
+            Move(PostCommandBuilder.NoMusicFile(plan), PostFolder.Post);
+            Move(PostCommandBuilder.Cover, PostFolder.Post);
+            Move("caption.txt", PostFolder.Post);
+            Move(PostCommandBuilder.CleanFile(plan), PostFolder.CapCut);
+            var srt = Path.Combine(Folder, PostCommandBuilder.Srt);
+            if (File.Exists(srt)) File.Copy(srt, Path.Combine(Into(PostFolder.CapCut), plan.Name + ".srt"), true);
+            var seg = Path.Combine(Folder, PostCommandBuilder.SegFolder);
+            if (Directory.Exists(seg)) Directory.Delete(seg, true);
+            foreach (var temp in new[] { PostCommandBuilder.Joined, PostCommandBuilder.Audio, PostCommandBuilder.AudioNoMusic })
+                if (File.Exists(Path.Combine(Folder, temp))) File.Delete(Path.Combine(Folder, temp));
+            foreach (var f in Directory.GetFiles(Folder))
+                if (Path.GetFileName(f) != PostFolder.Brief) Move(Path.GetFileName(f), PostFolder.Recipe);
         }
 
         void CopyFont(string source, string name)

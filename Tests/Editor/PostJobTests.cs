@@ -74,12 +74,17 @@ namespace SeedeXR.Kionjo.Tests
             MakeClipWithSound();
             MakeClipSilent(_b);
             var e = Entry();
+            e.media.Add(new JournalMedia { path = _a });
+            KionjoJournal.Save(e);
             var p = Post(_a, _b);
             var job = Run(e, p);
             Assert.IsFalse(job.Failed, job.Error);
-            foreach (var f in new[] { "test_9x16.mp4", "test_clean_9x16.mp4", "cover.jpg", "caption.txt", "post.json", "commands.txt", "post.ass" })
+            foreach (var f in new[] { "post/test_9x16.mp4", "capcut/test_clean_9x16.mp4", "post/cover.jpg", "post/caption.txt", "recipe/post.json", "recipe/commands.txt", "recipe/post.ass", "BRIEF.md", "materials/a.mp4" })
                 Assert.IsTrue(File.Exists(Path.Combine(job.Folder, f)), f);
-            Assert.IsFalse(File.Exists(Path.Combine(job.Folder, "test_nomusic_9x16.mp4")));
+            Assert.IsFalse(File.Exists(Path.Combine(job.Folder, "post", "test_nomusic_9x16.mp4")));
+            foreach (var gone in new[] { "seg", "joined.mp4", "audio.wav" })
+                Assert.IsFalse(File.Exists(Path.Combine(job.Folder, gone)) || Directory.Exists(Path.Combine(job.Folder, gone)), gone);
+            Assert.AreEqual(Path.Combine(job.Folder, "post", "test_9x16.mp4"), job.OutputMp4);
             var probe = Probe(job.OutputMp4);
             StringAssert.Contains("width=1080", probe);
             StringAssert.Contains("height=1920", probe);
@@ -89,12 +94,21 @@ namespace SeedeXR.Kionjo.Tests
             StringAssert.Contains("sample_rate=48000", probe);
             StringAssert.Contains("channels=2", probe);
             Assert.AreEqual(6f, new FfprobeMediaProbe().DurationSeconds(job.OutputMp4), 0.2f);
-            StringAssert.Contains("Can it work?", File.ReadAllText(Path.Combine(job.Folder, "caption.txt")));
+            StringAssert.Contains("Can it work?", File.ReadAllText(Path.Combine(job.Folder, "post", "caption.txt")));
             // the entry now records the post
             var back = KionjoJournal.Load(e.Folder, out _);
             Assert.AreEqual(1, back.posts.Count);
             Assert.AreEqual(p.id, back.posts[0].id);
-            Assert.AreEqual(Path.Combine(_dir, "posts", "test-post", p.id), job.Folder);
+            Assert.AreEqual(Path.Combine(_dir, "posts", "2026-11-13_test-post", "v01"), job.Folder);
+
+            // A second build writes v02; v01 keeps its recipe and loses its videos.
+            var second = Run(KionjoJournal.Load(e.Folder, out _), p);
+            Assert.IsFalse(second.Failed, second.Error);
+            Assert.AreEqual(Path.Combine(_dir, "posts", "2026-11-13_test-post", "v02"), second.Folder);
+            Assert.IsFalse(File.Exists(Path.Combine(job.Folder, "post", "test_9x16.mp4")));
+            Assert.IsTrue(File.Exists(Path.Combine(job.Folder, "recipe", "post.json")));
+            Assert.IsTrue(File.Exists(Path.Combine(second.Folder, "post", "test_9x16.mp4")));
+            Assert.IsTrue(File.Exists(_a), "the footage stays");
         }
 
         [Test]
@@ -106,8 +120,8 @@ namespace SeedeXR.Kionjo.Tests
             p.musicPath = _music;
             var job = Run(Entry(), p);
             Assert.IsFalse(job.Failed, job.Error);
-            Assert.IsTrue(File.Exists(Path.Combine(job.Folder, "test_nomusic_9x16.mp4")));
-            Assert.IsTrue(File.Exists(Path.Combine(job.Folder, "audio_nomusic.wav")));
+            Assert.IsTrue(File.Exists(Path.Combine(job.Folder, "post", "test_nomusic_9x16.mp4")));
+            Assert.IsFalse(File.Exists(Path.Combine(job.Folder, "audio_nomusic.wav")), "intermediate sound is deleted");
         }
 
         [Test]

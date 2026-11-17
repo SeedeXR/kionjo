@@ -269,8 +269,9 @@ namespace SeedeXR.Kionjo.EditorTools
             RefreshBuildState();
         }
 
-        string PostFolder(JournalEntry e, KionjoPost p) =>
-            Path.Combine(KionjoPaths.PostsRoot(KionjoPostsSettings.instance.outputFolder), KionjoJournal.Slug(e.title), p.id ?? "");
+        /// <summary>The entry's latest built vNN folder, or null.</summary>
+        static string LatestFolder(JournalEntry e) =>
+            PostFolder.Latest(PostFolder.EntryFolder(KionjoPaths.PostsRoot(KionjoPostsSettings.instance.outputFolder), e));
 
         void RefreshAfter()
         {
@@ -284,9 +285,9 @@ namespace SeedeXR.Kionjo.EditorTools
             }
             if (_lastJob != null && _lastJob.IsDone && !_lastJob.Failed)
                 foreach (var w in _lastJob.Warnings) _after.Add(new Label(w) { style = { whiteSpace = WhiteSpace.Normal } });
-            var folder = PostFolder(_e, _post);
-            if (string.IsNullOrEmpty(_post.id) || !Directory.Exists(folder)) return;
-            _after.Add(new Button(() => EditorUtility.RevealInFinder(Path.Combine(folder, "caption.txt"))) { name = "post-open-folder", text = "Open folder" });
+            var folder = LatestFolder(_e);
+            if (string.IsNullOrEmpty(_post.id) || folder == null || !Directory.Exists(folder)) return;
+            _after.Add(new Button(() => EditorUtility.RevealInFinder(Path.Combine(folder, PostFolder.Brief))) { name = "post-open-folder", text = "Open folder" });
             var row = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             var url = new TextField("Posted URL") { value = _post.postedUrl ?? "", style = { flexGrow = 1 } };
             row.Add(url);
@@ -385,11 +386,11 @@ namespace SeedeXR.Kionjo.EditorTools
             fold.Clear();
             var covers = new List<string>();
             foreach (var e in KionjoJournal.LoadAll(KionjoJournal.Folder, null))
-                foreach (var p in Enumerable.Reverse(e.posts))
-                {
-                    var cover = Path.Combine(PostFolder(e, p), PostCommandBuilder.Cover);
-                    if (File.Exists(cover)) covers.Add(cover);
-                }
+            {
+                var latest = e.posts.Count > 0 ? LatestFolder(e) : null;
+                var cover = latest == null ? null : Path.Combine(latest, PostFolder.Post, PostCommandBuilder.Cover);
+                if (cover != null && File.Exists(cover)) covers.Add(cover);
+            }
             var wrap = new VisualElement { style = { flexDirection = FlexDirection.Row, flexWrap = Wrap.Wrap, width = 3 * 92 } };
             foreach (var c in covers.Take(9))
             {
