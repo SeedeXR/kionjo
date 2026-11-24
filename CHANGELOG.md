@@ -3,6 +3,25 @@
 All notable changes to Kionjo are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - Unreleased (branch time-remap)
+
+### Added
+
+- Time remap: a shot's Speed keys (seconds into the render, speed) run the game at that speed while it renders
+  (`Time.timeScale`, with the physics step shrunk to match) and replay its take at the same speed. 0 freezes the world:
+  bullet time. A take shot gets the frames its curve needs; a live shot keeps its length.
+- Kionjo Camera Move: Path through waypoints (dolly, crane, whip pan, crash zoom with a field of view change) or Orbit
+  around a pivot, on render time, so it keeps moving while the world is slowed or frozen. Starts with the render.
+- Cut: per-shot Aspect (letterbox or pillarbox: one ratio per world), Grade (ffmpeg filters for the shot's look) and
+  Flash In (a flash from white, the glue between bullet-time angles).
+- Documentation~/Techniques.md: recipes for bullet time, speed ramps, whip pans, crash zooms, flash frames, aspect per
+  world and the climax burst, with numbers measured from real trailers.
+
+### Known
+
+- A render's first frames can carry camera motion blur from the camera's jump into place; start the cut 0.1 s in until
+  warm-up frames are rendered before capture.
+
 ## [0.2.3] - 2026-11-17
 
 ### Fixed

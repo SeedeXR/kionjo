@@ -99,9 +99,23 @@ namespace SeedeXR.Kionjo.EditorTools
             var crop = s.Crop.width > 0f && s.Crop.height > 0f
                 ? $"crop=iw*{F(s.Crop.width)}:ih*{F(s.Crop.height)}:iw*{F(s.Crop.x)}:ih*{F(s.Crop.y)},"
                 : "";
+            var grade = string.IsNullOrWhiteSpace(s.Grade) ? "" : s.Grade.Trim().TrimEnd(',').Trim() + ",";
+            var flash = s.FlashIn > 0f ? $",fade=t=in:st=0:d={F(s.FlashIn)}:color=white" : "";
             // tpad holds the last frame when the source ends before the planned out point.
-            return $"{crop}scale={p.Width}:{p.Height},fps={p.Fps},format=yuv420p,tpad=stop_mode=clone:stop_duration={F(s.Duration)}{Fades(s)}";
+            return $"{crop}{grade}{Fit(s.Aspect, p)},fps={p.Fps},format=yuv420p,tpad=stop_mode=clone:stop_duration={F(s.Duration)}{Fades(s)}{flash}";
         }
+
+        /// <summary>Fills the frame, or letterboxes (wider) / pillarboxes (narrower) the picture to an aspect ratio: one ratio per world.</summary>
+        static string Fit(float aspect, CutPlan p)
+        {
+            if (aspect <= 0f) return $"scale={p.Width}:{p.Height}";
+            int w = p.Width, h = p.Height;
+            if (aspect >= (float)p.Width / p.Height) h = Even(p.Width / aspect);
+            else w = Even(p.Height * aspect);
+            return $"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},pad={p.Width}:{p.Height}:(ow-iw)/2:(oh-ih)/2:color=black";
+        }
+
+        static int Even(float v) => Mathf.Max(2, Mathf.RoundToInt(v / 2f) * 2);
 
         /// <summary>Fills the frame without stretching (scale up then crop), optional slow push in, fades.</summary>
         public static string ImageFilter(CutSegment s, CutPlan p)

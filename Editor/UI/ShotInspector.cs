@@ -96,6 +96,9 @@ namespace SeedeXR.Kionjo.EditorTools
                 Field("horizontalFov");
                 Field("crop");
                 Field("speed");
+                Field("aspect");
+                Field("grade");
+                Field("flashIn");
 
                 Section("Staging");
                 Field("stageCommand");

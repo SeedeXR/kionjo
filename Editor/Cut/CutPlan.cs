@@ -17,6 +17,9 @@ namespace SeedeXR.Kionjo.EditorTools
         public float FilmStart;
         public float FadeIn, FadeOut;
         public Rect Crop;             // normalised; zero = none
+        public float Aspect;          // letterbox or pillarbox to this width / height; 0 = fill the frame
+        public string Grade;          // ffmpeg video filters put before scaling, e.g. "eq=saturation=0.6"
+        public float FlashIn;         // seconds of fade from white at the start
         public float PushIn = 1f;     // image cards
         public List<string> Lines = new();
         public string ShotId;

@@ -112,6 +112,9 @@ namespace SeedeXR.Kionjo.EditorTools
                 FadeIn = shot.fadeIn,
                 FadeOut = shot.fadeOut,
                 Crop = shot.crop,
+                Aspect = shot.aspect,
+                Grade = shot.grade,
+                FlashIn = shot.flashIn,
             };
         }
 

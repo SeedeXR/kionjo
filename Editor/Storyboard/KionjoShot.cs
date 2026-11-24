@@ -82,6 +82,12 @@ namespace SeedeXR.Kionjo.EditorTools
         public Rect crop;
         [Tooltip("Time remap: speed at seconds into the render, eased between keys. Empty = real time. 0 freezes the world while a Kionjo Camera Move keeps going (bullet time); 0.2 is a slow-motion ramp. See the Techniques page.")]
         public List<KionjoSpeedKey> speed = new();
+        [Tooltip("In the cut: letterbox or pillarbox to this aspect ratio (2.39, 1.85, 1.333). 0 fills the frame. One ratio per world tells the viewer where they are.")]
+        public float aspect;
+        [Tooltip("In the cut: ffmpeg video filters for this shot's look, for example eq=saturation=0.6:gamma=1.1,colorbalance=rm=0.08:bm=-0.06")]
+        public string grade;
+        [Tooltip("In the cut: seconds of flash from white at the start (2 frames: 0.067 at 30 fps). Glues bullet-time angles and hits.")]
+        public float flashIn;
         [Tooltip("Passed to every IKionjoStageHandler in the scene when the shot is staged.")]
         public string stageCommand;
         [Tooltip("Scene objects deactivated when the shot is staged (hierarchy paths).")]

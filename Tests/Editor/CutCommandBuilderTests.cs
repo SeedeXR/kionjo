@@ -61,6 +61,30 @@ namespace SeedeXR.Kionjo.Tests
         }
 
         [Test]
+        public void Segment_Aspect_LetterboxesWide()
+        {
+            var s = new CutSegment { Kind = SegmentKind.Video, Duration = 1f, Aspect = 2.39f };
+            StringAssert.StartsWith("scale=1280:536:force_original_aspect_ratio=increase,crop=1280:536,pad=1280:720:(ow-iw)/2:(oh-ih)/2:color=black,fps=",
+                CutCommandBuilder.VideoFilter(s, Plan()));
+        }
+
+        [Test]
+        public void Segment_Aspect_PillarboxesNarrow()
+        {
+            var s = new CutSegment { Kind = SegmentKind.Video, Duration = 1f, Aspect = 4f / 3f };
+            StringAssert.StartsWith("scale=960:720:force_original_aspect_ratio=increase,crop=960:720,pad=1280:720:", CutCommandBuilder.VideoFilter(s, Plan()));
+        }
+
+        [Test]
+        public void Segment_GradeAndFlash()
+        {
+            var s = new CutSegment { Kind = SegmentKind.Video, Duration = 1f, Grade = "eq=saturation=0.5, ", FlashIn = 0.067f };
+            var f = CutCommandBuilder.VideoFilter(s, Plan());
+            StringAssert.StartsWith("eq=saturation=0.5,scale=1280:720,", f);
+            StringAssert.EndsWith(",fade=t=in:st=0:d=0.067:color=white", f);
+        }
+
+        [Test]
         public void Segment_Black_UsesLavfi()
         {
             var args = CutCommandBuilder.Segment(new CutSegment { Label = "00_C01", Kind = SegmentKind.Black, Duration = 7.5f }, Plan()).Args;
