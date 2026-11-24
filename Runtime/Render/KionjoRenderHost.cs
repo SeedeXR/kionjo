@@ -28,6 +28,8 @@ namespace SeedeXR.Kionjo
         public string headTrackName = "Head";
         public float smoothingSeconds = 0.1f;
         public bool rollLock = true;
+        [Tooltip("Speed curve (time remap) in output seconds. Empty = real time.")]
+        public List<KionjoSpeedKey> speedKeys = new();
     }
 
     /// <summary>
@@ -49,6 +51,7 @@ namespace SeedeXR.Kionjo
 
         KionjoFrameCapture _capture;
         KionjoReplayer _replayer;
+        KionjoTimeRemap _remap;
         bool _ownsReplayer, _aborted;
 
         public static KionjoRenderHost Create(KionjoRenderRequest request)
@@ -104,13 +107,21 @@ namespace SeedeXR.Kionjo
                 _replayer.smoothingSeconds = r.smoothingSeconds;
                 _replayer.rollLock = r.rollLock;
                 _replayer.headTrackName = r.headTrackName;
+                _replayer.speedKeys = r.speedKeys ?? new List<KionjoSpeedKey>();
                 _replayer.Load(take);
                 float to = r.to < 0f ? take.Duration : Mathf.Min(r.to, take.Duration);
                 seconds = Mathf.Max(0f, to - r.from);
+                // a take is source time: the speed curve decides how many output frames it needs
+                TargetFrames = KionjoSpeed.FramesFor(r.speedKeys, seconds, r.fps);
             }
-            else seconds = r.liveSeconds;
+            else TargetFrames = Mathf.Max(1, Mathf.CeilToInt(r.liveSeconds * r.fps - 1e-3f)); // live: output time
 
-            TargetFrames = Mathf.Max(1, Mathf.CeilToInt(seconds * r.fps - 1e-3f));
+            if (!KionjoSpeed.IsRealTime(r.speedKeys))
+            {
+                _remap = gameObject.AddComponent<KionjoTimeRemap>();
+                _remap.keys = r.speedKeys;
+                _remap.fps = r.fps;
+            }
             _capture = gameObject.AddComponent<KionjoFrameCapture>();
             _capture.camera = camera;
             _capture.width = r.width;
@@ -127,6 +138,7 @@ namespace SeedeXR.Kionjo
             {
                 if (_replayer != null) _replayer.Play(r.from, r.to);
                 _capture.Begin();
+                if (_remap != null) _remap.Begin();
             }
             catch (Exception e)
             {
@@ -162,6 +174,7 @@ namespace SeedeXR.Kionjo
         void Finish(string error)
         {
             if (Done) return;
+            if (_remap != null) _remap.End();
             if (_replayer != null)
             {
                 _replayer.Stop();

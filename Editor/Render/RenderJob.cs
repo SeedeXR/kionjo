@@ -65,6 +65,7 @@ namespace SeedeXR.Kionjo.EditorTools
                 hidePaths = new(shot.hidePaths),
                 showPaths = new(shot.showPaths),
                 stageCommand = shot.stageCommand,
+                speedKeys = new(shot.speed ?? new()),
             };
         }
 

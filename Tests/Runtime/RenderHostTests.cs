@@ -106,5 +106,90 @@ namespace SeedeXR.Kionjo.Tests
             Assert.IsFalse(File.Exists(Path.ChangeExtension(output, ".partial.mp4")), "the render is moved into place when it succeeds");
             Assert.AreEqual(0f, Time.captureDeltaTime, "the clock lock must be released after a render");
         }
+
+        // Bullet time: the world is frozen (game time stands still, physics does not step) while the camera orbits.
+        [UnityTest]
+        public IEnumerator RenderHost_FrozenLiveShot_CameraMovesWorldStands()
+        {
+            var ffmpeg = FrameCaptureTests.FindExe("ffmpeg");
+            if (ffmpeg == null) Assert.Ignore("ffmpeg is not installed on this machine");
+            _root = new GameObject("Set");
+            var pivot = new GameObject("Pivot").transform;
+            pivot.SetParent(_root.transform);
+            var cam = new GameObject("Cam").AddComponent<Camera>();
+            cam.transform.SetParent(_root.transform);
+            cam.gameObject.AddComponent<KionjoCameraSource>();
+            var move = cam.gameObject.AddComponent<KionjoCameraMove>();
+            move.mode = KionjoCameraMove.MoveMode.Orbit;
+            move.pivot = pivot;
+            move.orbitDegrees = 180f;
+            move.seconds = 1f;
+            move.radius = 2f;
+            var ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            ball.transform.SetParent(_root.transform);
+            ball.transform.position = new Vector3(0f, 5f, 0f);
+            ball.AddComponent<Rigidbody>();
+            yield return null;
+            var start = pivot.position + pivot.forward * 2f + pivot.up * move.height; // where the orbit begins
+            float ballY = float.NaN, gameTime = 0f; // read once rendering runs: the ball falls during staging
+            float fixedBefore = Time.fixedDeltaTime;
+
+            var host = KionjoRenderHost.Create(new KionjoRenderRequest
+            {
+                shotId = "id", shotCode = "S02", liveSeconds = 1f,
+                width = 160, height = 90, fps = 30f, ffmpegExe = ffmpeg, outputMp4 = Path.Combine(_dir, "frozen.mp4"),
+                encoderArgs = new[] { "-c:v", "libx264", "-crf", "28", "-preset", "ultrafast" },
+                speedKeys = { new KionjoSpeedKey { t = 0f, speed = 0f } },
+            });
+            float until = Time.realtimeSinceStartup + 60f;
+            while (!host.Done && Time.realtimeSinceStartup < until)
+            {
+                if (host.Frames > 2)
+                {
+                    if (float.IsNaN(ballY)) ballY = ball.transform.position.y;
+                    gameTime += Time.deltaTime;
+                }
+                yield return null;
+            }
+            Assert.IsTrue(host.Done, "render did not finish in 60 s");
+            Assert.IsNull(host.Error, host.Error);
+            Assert.AreEqual(30, host.TargetFrames, "a live shot's length is output time");
+            Assert.AreEqual(0f, gameTime, 1e-6, "game time must stand still");
+            Assert.AreEqual(ballY, ball.transform.position.y, 1e-3, "physics must not step while frozen");
+            Assert.AreEqual(4f, Vector3.Distance(start, cam.transform.position), 0.05f, "the camera orbits half way round (2 m radius)");
+            Assert.AreEqual(1f, Time.timeScale, "time restored");
+            Assert.AreEqual(fixedBefore, Time.fixedDeltaTime, 1e-6, "physics step restored");
+        }
+
+        [UnityTest]
+        public IEnumerator RenderHost_HalfSpeedTake_TakesTwiceTheFrames()
+        {
+            var ffmpeg = FrameCaptureTests.FindExe("ffmpeg");
+            if (ffmpeg == null) Assert.Ignore("ffmpeg is not installed on this machine");
+            _root = new GameObject("Rig");
+            var cam = new GameObject("Head").AddComponent<Camera>();
+            cam.transform.SetParent(_root.transform);
+            cam.tag = "MainCamera";
+            var recorder = _root.AddComponent<KionjoRecorder>();
+            recorder.tracks.Add(new KionjoTrack { name = "Head", target = cam.transform });
+            var take = Path.Combine(_dir, "takes", "S03", "S03_take01");
+            recorder.StartTake(take, "id", "S03", 1);
+            float start = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - start < 1.2f) yield return null;
+            recorder.StopTake();
+
+            var host = KionjoRenderHost.Create(new KionjoRenderRequest
+            {
+                shotId = "id", shotCode = "S03", takeFolder = take, from = 0f, to = 1f,
+                width = 160, height = 90, fps = 30f, ffmpegExe = ffmpeg, outputMp4 = Path.Combine(_dir, "half.mp4"),
+                encoderArgs = new[] { "-c:v", "libx264", "-crf", "28", "-preset", "ultrafast" },
+                speedKeys = { new KionjoSpeedKey { t = 0f, speed = 0.5f } },
+            });
+            float until = Time.realtimeSinceStartup + 60f;
+            while (!host.Done && Time.realtimeSinceStartup < until) yield return null;
+            Assert.IsNull(host.Error, host.Error);
+            Assert.AreEqual(60, host.TargetFrames, "1 s of take at half speed is 2 s of video");
+            Assert.AreEqual(1f, Time.timeScale, "time restored");
+        }
     }
 }

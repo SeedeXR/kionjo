@@ -80,6 +80,8 @@ namespace SeedeXR.Kionjo.EditorTools
         public float horizontalFov;
         [Tooltip("Normalised crop (x, y, width, height). All zero = no crop.")]
         public Rect crop;
+        [Tooltip("Time remap: speed at seconds into the render, eased between keys. Empty = real time. 0 freezes the world while a Kionjo Camera Move keeps going (bullet time); 0.2 is a slow-motion ramp. See the Techniques page.")]
+        public List<KionjoSpeedKey> speed = new();
         [Tooltip("Passed to every IKionjoStageHandler in the scene when the shot is staged.")]
         public string stageCommand;
         [Tooltip("Scene objects deactivated when the shot is staged (hierarchy paths).")]

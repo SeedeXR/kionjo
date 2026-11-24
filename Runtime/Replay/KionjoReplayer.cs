@@ -29,6 +29,8 @@ namespace SeedeXR.Kionjo
         public bool lockFrameRate = true;
         [Tooltip("Frames per second of the replay when Lock Frame Rate is on.")]
         public float fps = 60f;
+        [Tooltip("Speed curve over the replay (output seconds). Empty = real time. Only used with Lock Frame Rate.")]
+        public List<KionjoSpeedKey> speedKeys = new();
         [Tooltip("Raised with (name, value) when a recorded event is reached, to put the scene in the same state. Never presses anything.")]
         public UnityEvent<string, string> onEvent = new();
 
@@ -46,6 +48,7 @@ namespace SeedeXR.Kionjo
         KionjoPoseSample[] _head;
         int _nextEvent;
         float _from, _to;
+        double _source; // take seconds played since _from, summed frame by frame along the speed curve
         float _savedCaptureDelta;
         bool _ownsCaptureDelta;
 
@@ -69,6 +72,7 @@ namespace SeedeXR.Kionjo
             Clock = _from = Mathf.Max(0f, from);
             _to = to < 0f ? Take.Duration : to;
             Frame = 0;
+            _source = 0;
             IsDone = false;
             IsPlaying = true;
             _nextEvent = 0;
@@ -120,10 +124,14 @@ namespace SeedeXR.Kionjo
                 Finished?.Invoke();
                 return;
             }
+            // Locked: computed from the frame index, so frame k is exactly from + k / fps in real time (and the frame
+            // Play was called in, which Unity still timed in real time, does not drift the clock). With a speed
+            // curve, frame k advances speed(k / fps) / fps, the step KionjoTimeRemap gives the game.
+            if (_ownsCaptureDelta && !KionjoSpeed.IsRealTime(speedKeys)) _source += KionjoSpeed.Evaluate(speedKeys, Frame / fps) / (double)fps;
             Frame++;
-            // Locked: computed, not accumulated, so frame k is exactly from + k / fps (and the frame
-            // Play was called in, which Unity still timed in real time, does not drift the clock).
-            Clock = _ownsCaptureDelta ? _from + Frame / fps : Clock + Time.deltaTime;
+            Clock = !_ownsCaptureDelta ? Clock + Time.deltaTime
+                : KionjoSpeed.IsRealTime(speedKeys) ? _from + Frame / fps
+                : _from + (float)_source;
         }
 
         void OnBeforeRender()
