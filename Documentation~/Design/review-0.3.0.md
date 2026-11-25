@@ -63,3 +63,17 @@ render puts the camera off the deck.
 
 ## Not done here
 No release, no tag, no merge, no version bump. CHANGELOG 0.3.0 stays "Unreleased" with these findings under Known.
+
+## Feature idea for the next version: trailer templates (Bernard, 25 Nov 2026; brainstorm before building)
+Bernard: "have trailer templates or types, so next time when I'm creating a trailer on another project, I could just
+select the template and Kionjo already knows the kind of trailer and what kind of shots to take."
+- A template = a storyboard skeleton: the structure (cold open / prologue with narration, bumper of flashes, title
+  card, beats, montage, climax burst, end card), each slot's kind (Performance take, Live Camera move, card, piece of
+  another shot), target lengths, transitions (flash, whip, match cut), aspect/grade per world, and the shot list a
+  person must perform in the headset vs what the camera can do alone.
+- First worked example: Chronicles of Kilwa trailer v02 (Kilwa repo docs/trailer/make_storyboard.py and
+  docs/trailer/techniques.md): narrated prologue over illustrations, VR performance takes (pickup, turn, look through,
+  pull, steer, carry, place), camera-only beats, bullet time, era burst, title. Baraza's posts are another family.
+- Open questions for the brainstorm: template as a ScriptableObject vs JSON; how a template binds to a new project's
+  objects (named slots the user fills); genre presets (story/arrival, action, cosy, explainer, store 30 s); how much the
+  Shoot tab guides the headset person through the template's performance list.
