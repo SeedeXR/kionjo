@@ -21,6 +21,10 @@ All notable changes to Kionjo are documented here. The format follows
 
 - A render's first frames can carry camera motion blur from the camera's jump into place; start the cut 0.1 s in until
   warm-up frames are rendered before capture.
+- Found with real headset takes (Kilwa, 25 Nov 2026; details and suggested fixes in
+  Documentation~/Design/review-0.3.0.md): the render camera does not follow the Head track when it is not the
+  recorder's Head target; the render host's replayer is not findable from game code; world-space takes drift on a
+  moving platform (a sailing ship).
 
 ## [0.2.3] - 2026-11-17
 
